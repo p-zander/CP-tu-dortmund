@@ -47,21 +47,42 @@ static double T2(int N, double theta, bool antiferro = false) {
         R[0] = b;
         R[1] = a;
         if (antiferro) n[1] = pow(-1, abs(a + b));
-        B += 3 * R.dot(n) / pow(R.norm(), 5) * R - 1 / pow(R.norm(), 3) * n;
+        B += 3 * R.dot(n) / pow(R.norm(), 5) * R - n / pow(R.norm(), 3);
       }
     }
   }
   return 1e-6 * (m.cross(B))[2];
 }
 
+// simple function to test correctness of T and T2
+static double T3(int N, double theta, bool antiferro = false) {
+  theta *= M_PI / 180;
+  double sum = 0;
+  double r = 0;
+  short anti =1;
+  for (int a = -N; a <= N; ++a) {
+    for (int b = -N; b <= N; ++b) {
+      if (!(a == 0 && b == 0)) {
+        r = sqrt(a * a + b * b);
+        if (antiferro) anti=pow(-1,abs(a+b));
+        sum +=
+            anti*(3 * b * (a * cos(theta) - b * sin(theta)) + r * r * sin(theta)) /
+            pow(r, 5);
+      }
+    }
+  }
+  return 1e-6*sum;
+}
+
 int main() {
   for (int i = 0; i <= 360; ++i) {
-    cout << i << "	" << T(2, i, 5) << "	" << T2(2, i) << endl;
+    cout << i << "  " << T(2, i, 5) << "  " << T2(2, i) << " " << T3(2, i)
+         << endl;
   }
   // ofstream file;
   // file.open("2NT_ferro.txt");
   // for (int i = 0; i <= 360; ++i) {
-  //   file << i << "	" << E(2, i, true) << "	" << T(2, i,1) << endl;
+  //   file << i << " " << E(2, i, true) << " " << T(2, i,1) << endl;
   // }
   // file.close();
   return 0;
