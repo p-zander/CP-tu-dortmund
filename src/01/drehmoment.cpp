@@ -24,17 +24,14 @@ static double E(int N, double theta, bool antiferro = false) {
     }
   }
 
-  return 10e-7 * sum;
+  return 1e-6 * sum;
 }
 
 // T via derivation of E
 static double T(int N, double theta, double h, bool antiferro = false) {
-  h *= M_PI / 180;
-  return -(E(N, theta + h, antiferro) - E(N, theta - h, antiferro)) / (2 * h);
-  // return -(E(N, theta - 2 * h, antiferro)E(N, theta - 2 * h, antiferro) - 8 *
-  // E(N, theta - h, antiferro) +
-  //          8 * E(N, theta + h, antiferro) - E(N, theta + 2 * h, antiferro)) /
-  //        (12 * h);
+  return -(E(N, theta - 2 * h, antiferro) - 8 * E(N, theta - h, antiferro) +
+           8 * E(N, theta + h, antiferro) - E(N, theta + 2 * h, antiferro)) /
+         (12 * h);
 }
 
 // T via m cross product
@@ -47,20 +44,19 @@ static double T2(int N, double theta, bool antiferro = false) {
   for (int a = -N; a <= N; ++a) {
     for (int b = -N; b <= N; ++b) {
       if (!(a == 0 && b == 0)) {
-        R[0] = a;
-        R[1] = b;
+        R[0] = b;
+        R[1] = a;
         if (antiferro) n[1] = pow(-1, abs(a + b));
-        B += 3 * R.dot(n) * R / pow(R.norm(), 5) - n / pow(R.norm(), 3);
+        B += 3 * R.dot(n) / pow(R.norm(), 5) * R - 1 / pow(R.norm(), 3) * n;
       }
     }
   }
-  return 10e-7 * (B.cross(m)).norm();
-  // return 10e-7*B.norm()*m.norm()*sin(acos((B.dot(m)/(B.norm()*m.norm()))));
+  return 1e-6 * (m.cross(B))[2];
 }
 
 int main() {
-  for (int i = 0; i <= 180; ++i) {
-    cout << i << "	" << T(2, i, 5e-5) << "	" << T2(2, i) << endl;
+  for (int i = 0; i <= 360; ++i) {
+    cout << i << "	" << T(2, i, 5) << "	" << T2(2, i) << endl;
   }
   // ofstream file;
   // file.open("2NT_ferro.txt");
