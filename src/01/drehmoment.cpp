@@ -1,7 +1,7 @@
 #include <fstream>
 #include <cmath>
 #include <Eigen/Dense>
-#include <iostream>
+#include <sstream>
 using namespace std;
 
 // Energy E
@@ -31,7 +31,7 @@ static double E(int N, double theta, bool antiferro = false) {
 static double T(int N, double theta, double h, bool antiferro = false) {
   return -(E(N, theta - 2 * h, antiferro) - 8 * E(N, theta - h, antiferro) +
            8 * E(N, theta + h, antiferro) - E(N, theta + 2 * h, antiferro)) /
-         (12 * h);
+         (12 * h * M_PI / 180);
 }
 
 // T via m cross product
@@ -51,39 +51,37 @@ static double T2(int N, double theta, bool antiferro = false) {
       }
     }
   }
-  return 1e-6 * (m.cross(B))[2];
+  return -1e-6 * (m.cross(B))[2];
 }
 
-// simple function to test correctness of T and T2
-static double T3(int N, double theta, bool antiferro = false) {
-  theta *= M_PI / 180;
-  double sum = 0;
-  double r = 0;
-  short anti =1;
-  for (int a = -N; a <= N; ++a) {
-    for (int b = -N; b <= N; ++b) {
-      if (!(a == 0 && b == 0)) {
-        r = sqrt(a * a + b * b);
-        if (antiferro) anti=pow(-1,abs(a+b));
-        sum +=
-            anti*(3 * b * (a * cos(theta) - b * sin(theta)) + r * r * sin(theta)) /
-            pow(r, 5);
+// Quick and dirty way to produce the needed text files.
+int main() {
+  int N[3] = {2, 5, 10};
+  stringstream filename1;
+  stringstream filename2;
+  for (int a = 0; a < 2; ++a) {
+    for (int b = 0; b < 3; ++b) {
+      filename1.str("");
+      filename2.str("");
+      (a) ? filename1 << "E_Antiferro_" << N[b] << ".txt"
+          : filename1 << "E_Ferro_" << N[b] << ".txt";
+      (a) ? filename2 << "T_Antiferro_" << N[b] << ".txt"
+          : filename2 << "T_Ferro_" << N[b] << ".txt";
+      ofstream file1;
+      ofstream file2;
+      file1.open(filename1.str().c_str());
+      file2.open(filename2.str().c_str());
+      file1 << "theta  E" << endl;
+      file2 << "theta  T(derived)  T(crosproduct)" << endl;
+      for (int i = 0; i <= 360; ++i) {
+        file1 << i << "  " << E(N[b], i, a) << endl;
+        file2 << i << "  " << T(N[b], i, 1, a) << "  " << T2(N[b], i, a)
+              << endl;
       }
+      file1.close();
+      file2.close();
     }
   }
-  return 1e-6*sum;
-}
 
-int main() {
-  for (int i = 0; i <= 360; ++i) {
-    cout << i << "  " << T(2, i, 5) << "  " << T2(2, i) << " " << T3(2, i)
-         << endl;
-  }
-  // ofstream file;
-  // file.open("2NT_ferro.txt");
-  // for (int i = 0; i <= 360; ++i) {
-  //   file << i << " " << E(2, i, true) << " " << T(2, i,1) << endl;
-  // }
-  // file.close();
   return 0;
 }
