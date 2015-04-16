@@ -44,8 +44,8 @@ static double T2(int N, double theta, bool antiferro = false) {
   for (int a = -N; a <= N; ++a) {
     for (int b = -N; b <= N; ++b) {
       if (!(a == 0 && b == 0)) {
-        R[0] = b;
-        R[1] = a;
+        R[0] = a;
+        R[1] = b;
         if (antiferro) n[1] = pow(-1, abs(a + b));
         B += 3 * R.dot(n) / pow(R.norm(), 5) * R - n / pow(R.norm(), 3);
       }
