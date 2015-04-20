@@ -56,28 +56,27 @@ double findNforEps(double bottom, double top, unsigned int N, double eps,
     result1 = g(bottom, top, N, f);
     error = abs(result2 - result1) / result2;
   } while (error > eps);
-	//cout << "N: " << N << "	" << result1 << endl;
+    // cout << "N: " << N << "  " << result1 << endl;
 
   return result1;
 }
 
-int main(int argc, char const *argv[]) {
-	double simpsonResult = findNforEps(-1, 1, 100, 1e-7, [](double x) { if(x==0) return 1.; return ( exp(x) - 1 )/ x; }, simpson);
-	double  trapezResult = findNforEps(-1, 1, 100, 1e-7, [](double x) { if(x==0) return 1.; return ( exp(x) - 1 )/ x; }, trapez);
-	double      mpResult = findNforEps(-1, 1, 100, 1e-7, [](double x) { if(x==0) return 1.; return ( exp(x) - 1 )/ x; }, mp);
+int main() {
+    double simpsonResult = findNforEps(-1, 1, 100, 1e-7, [](double x) { if(x==0) return 1.; return ( exp(x) - 1 )/ x; }, simpson);
+    double  trapezResult = findNforEps(-1, 1, 100, 1e-7, [](double x) { if(x==0) return 1.; return ( exp(x) - 1 )/ x; }, trapez);
+    double      mpResult = findNforEps(-1, 1, 100, 1e-7, [](double x) { if(x==0) return 1.; return ( exp(x) - 1 )/ x; }, mp);
 
-	cout.precision(10);
+    cout.precision(10);
+    cout << "I_1:" << endl << "Simpson: " << simpsonResult << " , Trapez: " << trapezResult << " , MP: " << mpResult << endl;
 
-	cout << "I_1:" << endl << "Simpson: " << simpsonResult << " , Trapez: " << trapezResult << " , MP: " << mpResult << endl;
+    double mpResult_1 = findNforEps(-1, 0, 100, 1e-7, [](double x) { if(x==0) return 1.; return ( exp(x) - 1 )/ x; }, mp);
+    double mpResult_2 = findNforEps( 0, 1, 100, 1e-7, [](double x) { if(x==0) return 1.; return ( exp(x) - 1 )/ x; }, mp);
 
-	double mpResult_1 = findNforEps(-1, 0, 100, 1e-7, [](double x) { if(x==0) return 1.; return ( exp(x) - 1 )/ x; }, mp);
-	double mpResult_2 = findNforEps( 0, 1, 100, 1e-7, [](double x) { if(x==0) return 1.; return ( exp(x) - 1 )/ x; }, mp);
+    cout << "MP left+right: " << mpResult_1+mpResult_2 << endl;
 
-	cout << "MP left+right: " << mpResult_1+mpResult_2 << endl;
+    double I_2 = 2*findNforEps( 0, 1e4, 1e6, 1e-6, [](double x){ return exp(-x*x); }, mp);
 
-	double I_2 = 2*findNforEps( 0, 1e7, 1e9, 1e-7, [](double x){ return exp(-x*x); }, mp);
+    cout << "I_2 = " << I_2 << endl;
 
-	cout << "I_2 = " << I_2 << endl;
-
-	return 0;
+    return 0;
 }
