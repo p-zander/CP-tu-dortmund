@@ -22,16 +22,18 @@ int main(int argc, char const* argv[]) {
     double a = 1;
     int steps = 100;
 
-    for (int n = 11; n <= 80; n++) {
+    for (int n = 1; n <= 80; n++) {
+        if (n==10) continue;
         double X = n * 0.1 * a;
         double result = simpson(-a, a, steps, [X, a, steps](double x) {
                             return simpson(-a, a, steps, [X, a, steps, x](double y) {
                                 return simpson(-a, a, steps, [X, a, steps, x, y](double z) {
-                                    return x * 1. / sqrt((X - x) * (X - x) + y * y + z * z);
+                                    if ( X == x && y == 0 && z == 0 ) return 0.;
+                                    return a / sqrt((X - x) * (X - x) + y * y + z * z);
                                 });
                             });
                         });
-    cout << X << "\t" << result << endl;
+        cout << X << "\t" << result << endl;
     }
 
     // cout << "Result at X = " << X << " is " << result << endl;
