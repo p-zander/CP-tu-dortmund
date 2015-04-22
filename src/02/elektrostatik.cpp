@@ -22,14 +22,13 @@ int main(int argc, char const* argv[]) {
     double a = 1;
     int steps = 100;
 
-    for (int n = 1; n <= 80; n++) {
-        if (n==10) continue;
+    for (int n = 2; n <= 80; n++) {
         double X = n * 0.1 * a;
         double result = simpson(-a, a, steps, [X, a, steps](double x) {
                             return simpson(-a, a, steps, [X, a, steps, x](double y) {
                                 return simpson(-a, a, steps, [X, a, steps, x, y](double z) {
-                                    if ( X == x && y == 0 && z == 0 ) return 0.;
-                                    return a / sqrt((X - x) * (X - x) + y * y + z * z);
+                                    if ( X - x < 1e-10 && y < 1e-10 && z < 1e-10 ) return 0.;
+                                    return x / sqrt((X - x) * (X - x) + y * y + z * z);
                                 });
                             });
                         });
