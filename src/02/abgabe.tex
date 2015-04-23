@@ -1,0 +1,65 @@
+\documentclass[paper=a4, ngerman]{scrartcl}
+\usepackage[utf8]{luainputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{siunitx}
+\sisetup{locale = DE, separate-uncertainty = true, mode = text, quotient-mode   = fraction, range-units = single, range-phrase = {~bis~}, table-auto-round  = true, table-figures-decimal   = 1, per-mode = fraction, output-decimal-marker = {,}, multi-part-units  = brackets, exponent-product  = \cdot}
+
+\renewcommand{\exp}[1]{\ensuremath{\text{e}^{#1}}}
+\renewcommand{\theequation}{\arabic{subsection}.\arabic{equation}}
+\renewcommand{\thesubsection}{}
+
+
+\begin{document}
+
+\section{Aufgabe 1}
+\subsection{a)}
+
+Das Hauptwertintegral $I_1$ lässt sich schreiben als
+
+\begin{equation}
+I_1 = \mathcal{P}\int_{-1}^{1} \frac{\exp{t}}{t} dt = \int_{-1}^{-a} \frac{\exp{t}}{t} dt + \int_{a}^{1} \frac{\exp{t}}{t} dt + \mathcal{P}\int_{-a}^{a} \frac{\exp{t}}{t} dt
+\end{equation}
+
+$a$ beliebig. Wird $a=1$ gesetzt werden die numerisches Fehler kleiner, da nur noch ein Integral bleibt. Dieses lässt sich schreiben als
+
+\begin{equation}
+I_1 = \int_{-1}^{1} \frac{\exp{t+z} - \exp{z}}{t} dt \overset{z=0}{=} \int_{-1}^{1} \frac{\exp{t} - 1}{t} dt 
+\end{equation}
+
+Dieses Integral kann mit der Simpsonregel berechnet werden, da hier der Grenzwert $\underset{t \rightarrow 0}{\lim} \frac{\exp{t} - 1}{t} = 1$ existiert. Das Ergebnis ist
+
+\begin{equation}
+I_1 = 2.114501751 \,.
+\end{equation}
+
+\subsection{b)}
+
+Mit der Substitution $s = \sqrt{t}$ folgt $2 ds = \frac{dt}{\sqrt{t}}$ und damit lässt sich das Integral schreiben als
+
+\begin{equation}
+I_2 = \int_{0}^{\infty} \frac{\exp{-t}}{\sqrt{t}} dt = 2 \int_{0}^{\infty} \exp{-s^2} ds = \sqrt{\pi}
+\end{equation}
+
+Mit der Simpsonregel lässt sich dieses Integral berechnen indem für die obere Grenze eine ausreichend große Zahl angenommen wird. Es ergibt sich
+
+\begin{equation}
+I_2 = 1.772453851 \,.
+\end{equation}
+
+\FloatBarrier
+\subsection{Aufgabe 2}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=.93\linewidth]{V1.pdf}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=.93\linewidth]{V2.pdf}
+\end{figure}
+
+\end{document}
