@@ -29,5 +29,9 @@ clean: cleanlatex
 	rm -f *.pdf
 	rm -f *.tar.gz
 
-pack: clean
+pack: all
+	rm -f hauptwert
+	rm -f elektrostatik
+	rm -f V1.pdf
+	rm -f V2.pdf
 	tar -czf abgabe.tar.gz *
