@@ -1,5 +1,6 @@
 CXX=clang++-3.5
 CXXFLAGS=-O2 -Wall -Werror -pedantic -std=c++11
+CXXFLAGS+=$(shell pkg-config --cflags eigen3)
 
 all: harmoszi
 
