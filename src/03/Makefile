@@ -2,9 +2,11 @@ CXX=clang++-3.5
 CXXFLAGS=-O2 -Wall -Werror -Wno-deprecated-register -pedantic -std=c++11
 CXXFLAGS+=$(shell pkg-config --cflags eigen3)
 
-all: harmoszi
+all: harmoszi kepler
 
 harmoszi: harmoszi.cpp
+
+kepler: kepler.cpp
 
 #plots: elektrostatik
 #	./elektrostatik
@@ -23,8 +25,10 @@ harmoszi: harmoszi.cpp
 
 clean: 
 	rm -f harmoszi
+	rm -f kepler
 	rm -f *.tar.gz
 
 pack: all
 	rm -f harmoszi
+	rm -f kepler
 	tar -czf abgabe.tar.gz *
