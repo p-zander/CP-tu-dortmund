@@ -33,7 +33,7 @@ RK4_newton(VectorXd r0, VectorXd v0, double t0, double tN, int N,
     double h = (tN-t0)/N;
 
     for (int i=1; i <=N; i++) {
-        val = RK4_newton(std::get<0>(val), std::get<1>(val), h*N, h, f);
+        val = RK4_newton(std::get<0>(val), std::get<1>(val), h*i, h, f);
         res_r.push_back(std::get<0>(val));
         res_v.push_back(std::get<1>(val));
     }
