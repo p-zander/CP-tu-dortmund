@@ -1,16 +1,17 @@
 CXX=clang++-3.5
-CXXFLAGS=-O2 -Wall -Werror -Wno-deprecated-register -pedantic -std=c++11
-CXXFLAGS+=$(shell pkg-config --cflags eigen3)
+CXXFLAGS=-O2 -Wall -Werror -pedantic -std=c++11
+CXXFLAGS+=$(shell pkg-config --cflags eigen3 | sed 's/I/isystem/g')
 
-all: harmoszi kepler
+all: plots
 
 harmoszi: harmoszi.cpp
 
 kepler: kepler.cpp
 
-#plots: elektrostatik
-#	./elektrostatik
-#	python2 plots.py
+plots: harmoszi kepler
+	./harmoszi
+	./kepler
+	python2 plots.py
 #
 #latex: plots
 #	pdflatex abgabe.tex
@@ -26,6 +27,7 @@ kepler: kepler.cpp
 clean: 
 	rm -f harmoszi
 	rm -f kepler
+	rm -f *.txt
 	rm -f *.tar.gz
 
 pack: all
