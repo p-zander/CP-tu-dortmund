@@ -1,0 +1,110 @@
+\documentclass[paper=a4, ngerman]{scrartcl}
+\usepackage[utf8]{luainputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{siunitx}
+\sisetup{locale = DE, separate-uncertainty = true, mode = text, quotient-mode   = fraction, range-units = single, range-phrase = {~bis~}, table-auto-round  = true, table-figures-decimal   = 1, per-mode = fraction, output-decimal-marker = {,}, multi-part-units  = brackets, exponent-product  = \cdot}
+
+\renewcommand{\exp}[1]{\ensuremath{\text{e}^{#1}}}
+\renewcommand{\theequation}{\arabic{subsection}.\arabic{equation}}
+\renewcommand{\thesubsection}{}
+
+
+\begin{document}
+
+\section{Aufgabe 3}
+\subsection{a}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=.8\textwidth]{a1.pdf}
+	\caption{Ellipse für t=0..37, N=25  und v(0, 1.3, 0)}
+	\label{fig:a1}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[trim = 10px 10px 10px 30px, clip, width=.8\textwidth]{a2.pdf}
+	\caption{Ellipse für t=0...37, N=100 und v=(0, 1.3, 0)}
+	\label{fig:a2}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=.8\textwidth]{a3.pdf}
+	\caption{Ellipse für t=0...37, N=100 und v=(0, 0.88, 0)}
+	\label{fig:a3}
+\end{figure}
+\FloatBarrier
+\subsection{b}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[trim = 70px 10px 30px 10px, clip, width=\textwidth]{b.pdf}
+	\caption{Plot zu Aufgabenteil b).}
+	\label{fig:b}
+\end{figure}
+
+\FloatBarrier
+\subsection{c}
+In Abbildung \ref{fig:c2} ist die resultierende Ellipse inklusive Lenz-Runge Vektor abgebildet. Es ist zu erkennen, dass der Lenz-Runge Vektor vom rechten Brennpunkt in Richtung des nächsten Bahnpunktes (Perizentrum) zeigt.
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[trim = 10px 10px 10px 30px, clip, width=.8\textwidth]{c1.pdf}
+	\caption{Komponenten des Lenz-Runge Vektors}
+	\label{fig:c1}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=\textwidth]{c2.pdf}
+	\caption{Ellipse mit Lenz-Runge Vektor in rot.}
+	\label{fig:c2}
+\end{figure}
+
+\FloatBarrier
+\subsection{d}
+Umkehrung der Geschwindigkeit und erneute Ausführung der Routine liefern folgende Werte:
+\begin{align}
+	\nonumber \text{Verwendete Parameter:  } \mathrm{t}= 0...100, N=10000\\
+    \nonumber \mathrm{v}_\mathrm{u}(tN)=(\SI{-1.02378e-8}{}, -1.3, 0) \\
+    \nonumber \mathrm{r}_\mathrm{u}(tN)=(1.0, \SI{-1.3308e-8}{}, 0) 
+\end{align}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=.9\textwidth]{d.pdf}
+	\caption{Differenz der Geschwindigkeits- und Ortskomponenten.}
+	\label{fig:d}
+\end{figure}
+
+\FloatBarrier
+\subsection{e}
+Verhalten der Komponenten des Lenz-Runge Vektors und Form der Ellipsen bei einem Potential der Form $\mathrm{V(r)}=-\mathrm{Gm}/\mathrm{r}^{\alpha}$.
+Wie in den folgenden Plots zu erkennen ist verschieben sich die Bahnen der Ellipsen, und der Lenz-Runge Vektor ist nicht mehr erhalten.
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=.8\textwidth]{e09LR.pdf}
+	\caption{Komponenten des Lenz-Runge Vektors in Abhängigkeit der Zeit t, für $\alpha=0.9$.}
+	\label{fig:e09l}
+\end{figure}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=\textwidth]{e09EL.pdf}
+	\caption{Ellipse für $\alpha=0.9$}
+	\label{fig:label}
+\end{figure}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=.8\textwidth]{e11LR.pdf}
+	\caption{Komponenten des Lenz-Runge Vektors in Abhängigkeit der Zeit t, für $\alpha=1.1$.}
+	\label{fig:e1LR}
+\end{figure}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=\textwidth]{e11EL.pdf}
+	\caption{Ellipse für $\alpha=1.1$}
+	\label{fig:label}
+\end{figure}
+
+\end{document}
