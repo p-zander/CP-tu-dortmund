@@ -16,13 +16,15 @@ using Eigen::Vector3d;
 int main() {
     Vector3d r0(1, 0, 0);
     double t0 = 0;
-    double tN = 8*3.14159265358;
-    
+    double tN = 4*3.14159265358;
+
     Vector3d v0(0, 0, 0);
-    size_t steps = 24;  // h = 1.0472
+    size_t steps = 12;  // h = 1.0472
     double h = (tN - t0) / steps;
 
     vector<VectorXd> r, v;
+    /* can't be vector<Vector3d> because casting vector<x> to vector<y> can't be
+    done implicitly even if x can be implicitly casted to y */
 
     std::tie(r, v) = RK4_newton(r0, v0, t0, tN, steps, [](Vector3d r, double) { return -r; });
 
@@ -34,8 +36,8 @@ int main() {
               << v[i][0] << "\t" << v[i][1] << "\t" << v[i][2] << "\t" << endl;
     }
 
-    v0 = Vector3d(0, 1, 0);
-    steps = 88;  // h = 0.2856
+    v0 = Vector3d(0, 0.5, 0);
+    steps = 52;  // h = 0.2618
     h = (tN - t0) / steps;
 
     r.clear();
