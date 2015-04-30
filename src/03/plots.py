@@ -88,10 +88,10 @@ V, = plt.plot(
 E, = plt.plot(bcd[:, 0], .5 * np.sum(bcd[:, 4:7]**2, axis=1) - 1 /
               np.sqrt(np.sum(bcd[:, 1:4]**2, axis=1)), label=r'$\mathrm{E}_{ges}$')
 
-legend2 = plt.legend([V, Ek, E], loc=1)
+legend2 = plt.legend(handles=[V, Ek, E], loc=1)
 ax = plt.gca().add_artist(legend2)
 
-plt.legend([Ldot, Lx, Ly, Lz], loc=2)
+plt.legend(handles=[Ldot, Lx, Ly, Lz], loc=2)
 plt.ylim(-1.1, 2.5)
 plt.xlabel('t')
 plt.savefig("b.pdf")

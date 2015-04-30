@@ -18,8 +18,8 @@ a_tn_37_N_100_vy_0.88.txt a_tn_37_N_100_vy_1.3.txt a_tn_37_N_25_vy_1.3.txt bcd.t
 2a.txt 2b.txt a_tn_37_N_100_vy_0.88.txt a_tn_37_N_100_vy_1.3.txt a_tn_37_N_25_vy_1.3.txt bcd.txt e_alpha_0.9.txt e_alpha_1.1.txt plots.py
 	python2 plots.py
 
-abgabe.pdf: 2a.pdf 2b_2.pdf 2b.pdf a1.pdf a2.pdf a3.pdf b.pdf c1.pdf c2.pdf d.pdf e09EL.pdf e09LR.pdf e11EL.pdf e11LR.pdf
-	latexmk -lualatex -silent abgabe.tex
+abgabe.pdf: abgabe.tex
+	latexmk -lualatex -use-make -f -silent abgabe.tex
 	$(MAKE) cleanlatex
 
 cleanlatex:
