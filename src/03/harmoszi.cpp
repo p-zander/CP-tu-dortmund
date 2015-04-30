@@ -1,14 +1,12 @@
 #include <Eigen/Core>
-#include <functional>
+#include <utility>
 #include <vector>
 #include <cmath>
-#include <iostream>
 #include <fstream>
 
 #include "./rungekutta.h"
 
 using std::vector;
-using std::cout;
 using std::endl;
 using std::ofstream;
 using Eigen::Vector3d;
@@ -16,7 +14,7 @@ using Eigen::Vector3d;
 int main() {
     Vector3d r0(1, 0, 0);
     double t0 = 0;
-    double tN = 4*3.14159265358;
+    double tN = 4*M_PI;
 
     Vector3d v0(0, 0, 0);
     size_t steps = 12;  // h = 1.0472

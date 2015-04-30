@@ -1,10 +1,11 @@
-#include "rungekutta.h"
-#include <cmath>
 #include <Eigen/Dense>
+#include <cmath>
 #include <fstream>
 #include <sstream>
 #include <utility>
 #include <vector>
+
+#include "./rungekutta.h"
 
 using std::vector;
 using std::endl;
@@ -121,9 +122,9 @@ int main() {
   a(v0, 37, 100);
   a(v0, 37, 25);
   a(v1, 37, 100);
-  
+
   bcd();
-  
+
   // e(double alpha). Alpha defines the exponent of r in V(r) = -1/r^(alpha)
   e(0.9);
   e(1.1);
