@@ -1,14 +1,11 @@
 #include "rungekutta.h"
-#include <Eigen/Dense>
-#include <functional>
-#include <utility>
-#include <vector>
 #include <cmath>
+#include <Eigen/Dense>
 #include <fstream>
 #include <sstream>
-#include <iostream>
+#include <utility>
+#include <vector>
 
-using std::cout;
 using std::vector;
 using std::endl;
 using Eigen::Vector3d;
@@ -120,10 +117,14 @@ void e(double alpha) {
 int main() {
   Vector3d v0(0, 1.3, 0), v1(0, 0.88, 0);
 
+  // a(Vector3d v0, double tN, double steps), t0 is set to zero. r0 is (1, 0, 0).
   a(v0, 37, 100);
   a(v0, 37, 25);
   a(v1, 37, 100);
+  
   bcd();
+  
+  // e(double alpha). Alpha defines the exponent of r in V(r) = -1/r^(alpha)
   e(0.9);
   e(1.1);
 
