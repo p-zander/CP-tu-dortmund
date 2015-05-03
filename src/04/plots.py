@@ -84,7 +84,7 @@ for i in np.arange(2, 13, 2):
     plt.xlabel(r"$\theta$")
     plt.ylabel(r"$\omega$ in Hz")
     plt.legend(loc='upper left')
-    plt.savefig("2_a_"+`1000*x[int(i/2-1)]`+".pdf")
+    plt.savefig("2_a_"+`int(i/2-1)`+".pdf")
     
 del data, x
 
@@ -96,6 +96,7 @@ plt.plot(data[:,1], data[:,2], '.', label=u"Poincaré-Schnitt an "+r"$x = 22$cm"
 plt.xlabel(r"$\theta$")
 plt.ylabel(r"$\omega$ in Hz")
 plt.legend(loc='best')
+plt.savefig("2_b.pdf")
 
 del data
 

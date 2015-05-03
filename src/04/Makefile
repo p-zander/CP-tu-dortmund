@@ -2,7 +2,7 @@ CXX=clang++-3.5
 CXXFLAGS=-O2 -Wall -Werror -pedantic -std=c++11
 CXXFLAGS+=$(shell pkg-config --cflags eigen3 | sed 's/I/isystem/g')
 
-all: plots
+all: Abgabe4.pdf
 
 zeeman: zeeman.cpp
 
@@ -13,18 +13,18 @@ plots: zeeman bifurk
 	./bifurk
 	python2 plots.py
 
-# latex: plots
-# 	pdflatex abgabe.tex
-# 	make cleanlatex
+Abgabe4.pdf: Abgabe4.tex plots
+	latexmk -lualatex -use-make -f -silent Abgabe4.tex
+	$(MAKE) cleanlatex
 
-# cleanlatex:
-# 	rm -f *.aux
-# 	rm -f *.fdb_latexmk
-# 	rm -f *.fls
-# 	rm -f *.log
-# 	rm -f *.synctex.gz
+cleanlatex:
+	rm -f *.aux
+	rm -f *.fdb_latexmk
+	rm -f *.fls
+	rm -f *.log
+	rm -f *.synctex.gz
 
-clean:
+clean:	cleanlatex
 	rm -f zeeman
 	rm -f bifurk
 	rm -f *.txt
@@ -34,4 +34,6 @@ clean:
 pack: all
 	rm -f zeeman
 	rm -f bifurk
-	tar -czf abgabe.tar.gz *
+	rm -f 1*.pdf
+	rm -f 2*.pdf
+	tar -czf abgabe4.tar.gz *
