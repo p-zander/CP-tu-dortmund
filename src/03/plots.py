@@ -1,7 +1,44 @@
 #! /usr/bin/env python
 
+from __future__ import division
+
 import numpy as np
 import matplotlib.pyplot as plt
+
+a = np.genfromtxt("2a.txt")
+b = np.genfromtxt("2b.txt")
+
+plt.plot(a[:, 0], a[:, 1], label=u'$x_0$')
+plt.plot(b[:, 0], b[:, 1], label=u'$x_1$')
+plt.plot(b[:, 0], b[:, 2], label=u'$y_1$')
+plt.xlabel("t")
+plt.ylabel("x/y(t)")
+plt.legend(loc='best', fontsize='large')
+plt.savefig("2a.pdf")
+plt.clf()
+
+plt.plot(b[:, 0], 1/2 * np.sum(b[:, 4:7]**2, axis=1), label=u'$E_{kin}$')
+plt.plot(b[:, 0], 1/2 * np.sum(b[:, 1:4]**2, axis=1), label=u'$E_{pot}$')
+plt.plot(b[:, 0], 1/2 * np.sum(b[:, 4:7]**2, axis=1) + 1/2 * np.sum(b[:, 1:4]**2, axis=1), label=u'$E_{ges}$')
+plt.xlabel("t")
+plt.ylabel("E")
+plt.ylim(0, 1)
+plt.legend(loc='best', fontsize='large')
+plt.savefig("2b.pdf")
+plt.clf()
+
+E_a = 1/2 * np.sum(a[:, 4:7]**2, axis=1) + 1/2 * np.sum(a[:, 1:4]**2, axis=1)
+E_b = 1/2 * np.sum(b[:, 4:7]**2, axis=1) + 1/2 * np.sum(b[:, 1:4]**2, axis=1)
+plt.semilogy(b[:, 0], np.abs(E_b - E_b[0]), label=u'$E_{ges}$')
+plt.semilogy(a[:, 0], np.abs(E_a - E_a[0]), label=u'$E_{ges}$')
+plt.xlabel("t")
+plt.ylabel(u"$\Delta E$")
+plt.ylim(1e-6, 1)
+plt.legend(loc='upper left', fontsize='large')
+plt.savefig("2b_2.pdf")
+plt.clf()
+
+del a, b, E_a, E_b
 
 a1 = np.genfromtxt("a_tn_37_N_25_vy_1.3.txt")
 a2 = np.genfromtxt("a_tn_37_N_100_vy_1.3.txt")

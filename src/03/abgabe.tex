@@ -1,23 +1,66 @@
 \documentclass[paper=a4, ngerman]{scrartcl}
 \usepackage[utf8]{luainputenc}
-\usepackage{amsmath}
+\usepackage{amsmath} 
+\usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage{caption}
+\captionsetup[figure]{style=default, name=Abb., labelformat=simple, justification=justified, labelsep=colon, position=above, width=\textwidth, labelfont={small}, font={small} }
+
 \usepackage{float}
-\usepackage{placeins}
+\usepackage[section]{placeins}
 \usepackage{siunitx}
 \sisetup{locale = DE, separate-uncertainty = true, mode = text, quotient-mode   = fraction, range-units = single, range-phrase = {~bis~}, table-auto-round  = true, table-figures-decimal   = 1, per-mode = fraction, output-decimal-marker = {,}, multi-part-units  = brackets, exponent-product  = \cdot}
 
 \renewcommand{\exp}[1]{\ensuremath{\text{e}^{#1}}}
 \renewcommand{\theequation}{\arabic{subsection}.\arabic{equation}}
+\renewcommand{\thesection}{}
 \renewcommand{\thesubsection}{}
-
 
 \begin{document}
 
-\section{Aufgabe 3}
-\subsection{a}
+\section{Aufgabe 2}
+\subsection{a+b)}
+
+In Abbildung \ref{fig:2a} sind alle von 0 verschiedenen Komponenten für die beiden Einstellungen zu sehen:
+\begin{itemize}
+\item $\vec{r} = \vec{e}_x, \vec{v} = \vec{0}$ \hspace{2cm} mit zu großer Schrittweite $h = \num{1.0472}$
+\item $\vec{r} = \vec{e}_x, \vec{v} = \frac12\vec{e}_y \Rightarrow \vec{r} \nparallel \vec{v}$ ~\, mit ausreichend kleiner 
+Schrittweite $h = \num{0.2618}$
+\end{itemize}
+
+Zu sehen ist dass bei zu kleiner Schrittweite ($x_0$) die Amplitude schon nach zwei Oszillationen nicht mehr bei 1 ist. Bei viermal so vielen Schritten ($x_1, y_1$) ist die Genauigkeit aber ausreichend. In Abbildung \ref{fig:2b} ist für diesen Fall die Energieerhaltung zu sehen und in Abbildung \ref{fig:2b_2} die Differenz zu Startenergie.
+\vfill
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=\textwidth]{2a.pdf}
+	\caption{Plot für Aufgabe 2}
+	\label{fig:2a}
+\end{figure}
+\vfill
+\newpage
 
 \begin{figure}[htbp]
+    \centering
+    \begin{minipage}{.49\textwidth}
+        \centering
+        \includegraphics[width=1.0\textwidth]{2b.pdf}
+        \caption{Energien\\~}
+        \label{fig:2b}
+    \end{minipage}
+    \begin{minipage}{.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{2b_2.pdf}
+        \caption{Gesamtenergiedifferenz zu\\$E_{ges}(t=0)$}
+        \label{fig:2b_2}
+    \end{minipage}
+\end{figure} 
+
+\section{Aufgabe 3}
+\subsection{a)}
+
+Je kleiner $v$ wird, desto kleiner muss die Schrittweite werden damit die Ellipse wirklich schließt. Zu große Schrittweiten führen dabei zu einer sich vergrößernden Abweichung.
+
+\begin{figure}[!h]
 	\centering
 	\includegraphics[width=.8\textwidth]{a1.pdf}
 	\caption{Ellipse für t=0..37, N=25  und v(0, 1.3, 0)}
@@ -25,20 +68,24 @@
 \end{figure}
 
 \begin{figure}[htbp]
-	\centering
-	\includegraphics[trim = 10px 10px 10px 30px, clip, width=.8\textwidth]{a2.pdf}
-	\caption{Ellipse für t=0...37, N=100 und v=(0, 1.3, 0)}
-	\label{fig:a2}
-\end{figure}
+    \centering
+    \begin{minipage}{.99\textwidth}
+		\centering
+		\includegraphics[trim = 10px 10px 10px 30px, clip, width=.8\textwidth]{a2.pdf}
+		\caption{Ellipse für t=0...37, N=100 und v=(0, 1.3, 0)}
+		\label{fig:a2}
+    \end{minipage}\\
+    \begin{minipage}{.99\textwidth}
+		\centering
+		\includegraphics[width=.8\textwidth]{a3.pdf}
+		\caption{Ellipse für t=0...37, N=100 und v=(0, 0.88, 0)}
+		\label{fig:a3}
+    \end{minipage}
+\end{figure} 
 
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=.8\textwidth]{a3.pdf}
-	\caption{Ellipse für t=0...37, N=100 und v=(0, 0.88, 0)}
-	\label{fig:a3}
-\end{figure}
 \FloatBarrier
-\subsection{b}
+\subsection{b)}
+
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[trim = 70px 10px 30px 10px, clip, width=\textwidth]{b.pdf}
@@ -47,11 +94,12 @@
 \end{figure}
 
 \FloatBarrier
-\subsection{c}
+\subsection{c)}
 In Abbildung \ref{fig:c2} ist die resultierende Ellipse inklusive Lenz-Runge Vektor abgebildet. Es ist zu erkennen, dass der Lenz-Runge Vektor vom rechten Brennpunkt in Richtung des nächsten Bahnpunktes (Perizentrum) zeigt.
+
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[trim = 10px 10px 10px 30px, clip, width=.8\textwidth]{c1.pdf}
+	\includegraphics[trim = 10px 10px 10px 30px, clip, width=\textwidth]{c1.pdf}
 	\caption{Komponenten des Lenz-Runge Vektors}
 	\label{fig:c1}
 \end{figure}
@@ -64,7 +112,7 @@ In Abbildung \ref{fig:c2} ist die resultierende Ellipse inklusive Lenz-Runge Vek
 \end{figure}
 
 \FloatBarrier
-\subsection{d}
+\subsection{d)}
 Umkehrung der Geschwindigkeit und erneute Ausführung der Routine liefern folgende Werte:
 \begin{align}
 	\nonumber \text{Verwendete Parameter:  } \mathrm{t}= 0...100, N=10000\\
@@ -73,18 +121,18 @@ Umkehrung der Geschwindigkeit und erneute Ausführung der Routine liefern folgen
 \end{align}
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=.9\textwidth]{d.pdf}
+	\includegraphics[width=\textwidth]{d.pdf}
 	\caption{Differenz der Geschwindigkeits- und Ortskomponenten.}
 	\label{fig:d}
 \end{figure}
 
 \FloatBarrier
-\subsection{e}
+\subsection{e)}
 Verhalten der Komponenten des Lenz-Runge Vektors und Form der Ellipsen bei einem Potential der Form $\mathrm{V(r)}=-\mathrm{Gm}/\mathrm{r}^{\alpha}$.
 Wie in den folgenden Plots zu erkennen ist verschieben sich die Bahnen der Ellipsen, und der Lenz-Runge Vektor ist nicht mehr erhalten.
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=.8\textwidth]{e09LR.pdf}
+	\includegraphics[width=\textwidth]{e09LR.pdf}
 	\caption{Komponenten des Lenz-Runge Vektors in Abhängigkeit der Zeit t, für $\alpha=0.9$.}
 	\label{fig:e09l}
 \end{figure}
@@ -92,11 +140,11 @@ Wie in den folgenden Plots zu erkennen ist verschieben sich die Bahnen der Ellip
 	\centering
 	\includegraphics[width=\textwidth]{e09EL.pdf}
 	\caption{Ellipse für $\alpha=0.9$}
-	\label{fig:label}
+	\label{fig:label1}
 \end{figure}
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=.8\textwidth]{e11LR.pdf}
+	\includegraphics[width=\textwidth]{e11LR.pdf}
 	\caption{Komponenten des Lenz-Runge Vektors in Abhängigkeit der Zeit t, für $\alpha=1.1$.}
 	\label{fig:e1LR}
 \end{figure}
@@ -104,7 +152,7 @@ Wie in den folgenden Plots zu erkennen ist verschieben sich die Bahnen der Ellip
 	\centering
 	\includegraphics[width=\textwidth]{e11EL.pdf}
 	\caption{Ellipse für $\alpha=1.1$}
-	\label{fig:label}
+	\label{fig:label2}
 \end{figure}
 
 \end{document}
