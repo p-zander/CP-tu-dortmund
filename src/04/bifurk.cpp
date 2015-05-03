@@ -44,7 +44,7 @@ void a() {
     thetas.push_back(thetas_i);
     ws.push_back(ws_i);
   }
-  ofstream file("2a.txt");
+  ofstream file("2_a.txt");
   file << "t \t theta_i \t omega_i, \t i= 1...6 " << endl;
   for (size_t i = 0; i < steps; ++i) {
     file << i* tN / steps << "\t";
@@ -89,8 +89,8 @@ void bc(const double x0, const double xN, const size_t xsteps,
 
 int main() {
   a();
-  bc(0.22, 0.22, 1, "2b.txt");
-  bc(0.218, 0.22, 200, "2c.txt");
+  bc(0.22, 0.22, 1, "2_b.txt");
+  bc(0.218, 0.22, 200, "2_c.txt");
 
   return 0;
 }

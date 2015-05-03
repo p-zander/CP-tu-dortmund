@@ -23,7 +23,7 @@ const double I = 6250e-7;  // Kg*m²
 const double G = 2e-4;     // Kg*m²/s
 
 void ab() {
-    ofstream file("ab.txt");
+    ofstream file("1_ab.txt");
 
     file << "# theta \t V(18,1) \t V(16,0) \t V(16,2) \t "
             "F(18,1) ana \t F(18,1) num" << endl;
@@ -48,7 +48,7 @@ void b(double x, double y, double theta0, double w0 = 0, double tN = 40, size_t 
   double h = tN / steps;
 
   stringstream s;
-  s << "b_" << x*100 << "_" << y*100 << "_" << theta0 << ".txt";
+  s << "1_b_" << x*100 << "_" << y*100 << "_" << theta0 << ".txt";
   ofstream file(s.str());
 
   for(int i=0; i<steps; i++) {
@@ -73,7 +73,7 @@ void c() {
                                 return 1/I * (-G * w + F(theta, x, 0.02*(1-t/100)));
                             });
 
-  ofstream file("c.txt");
+  ofstream file("1_c.txt");
   double h = 100./steps;
 
   for (int i=0; i < steps; i++)
