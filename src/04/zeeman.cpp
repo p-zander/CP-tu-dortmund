@@ -1,16 +1,19 @@
 #include <Eigen/Core>
-#include "rungekutta.h"
+#include <sstream>
 #include <utility>
-#include <iostream>
 #include <cmath>
 #include <functional>
 #include <vector>
+#include <fstream>
 
-using Eigen::Vector3d;
+#include "./zeeman.h"
+#include "./rungekutta.h"
+
 using Eigen::VectorXd;
-using std::cout;
 using std::endl;
 using std::vector;
+using std::ofstream;
+using std::stringstream;
 
 const double R = 0.05;     // m
 const double B = 0.1;      // m
@@ -19,52 +22,75 @@ const double K = 0.25;     // Kg/s²
 const double I = 6250e-7;  // Kg*m²
 const double G = 2e-4;     // Kg*m²/s
 
-double V(double theta, double x, double y) {
-  double d1 = sqrt(A * A + 2 * A * R * cos(theta) + R * R);
-  double d2 = sqrt(R * R + x * x + y * y - 2 * R * (x * cos(theta) + y * sin(theta)));
-  return .5 * K * pow(d1 - B, 2) + .5 * K * pow(d2 - B, 2);
+void ab() {
+    ofstream file("ab.txt");
+
+    file << "# theta \t V(18,1) \t V(16,0) \t V(16,2) \t "
+            "F(18,1) ana \t F(18,1) num" << endl;
+
+    for (int i = 0; i < 360; ++i) {
+        double theta = M_PI * i / 180;
+        file <<        theta         << "\t" << V(theta, 0.18, 0.01) << "\t"
+             <<  V(theta, 0.16, 0)   << "\t" << V(theta, 0.16, 0.02) << "\t"
+             << F(theta, 0.18, 0.01) << "\t" << -deriveV(theta, 0.18, 0.01)
+             << endl;
+    }
 }
 
-double F(double theta, double x, double y) {
-  double d1 = sqrt(A * A + 2 * A * R * cos(theta) + R * R);
-  double d2 = sqrt(R * R + x * x + y * y - 2 * R * (x * cos(theta) + y * sin(theta)));
-  double z1 = -A * R * sin(theta);  // numerator of derivative of d1
-  double z2 = -R * (y * cos(theta) - x * sin(theta));  // numerator of derivative of d2
-  return -K * (z1 - B * z1 / d1) - K * (z2 - B * z2 / d2);
+void b(double x, double y, double theta0, double w0 = 0, double tN = 40, size_t steps = 100) {
+  vector<double> thetas, ws;
+
+  std::tie(thetas, ws) = RK4_newton(theta0, w0, 0, tN, steps,
+                              [x, y](double theta, double w, double) {
+                                return 1/I * (-G * w + F(theta, x, y));
+                              });
+
+  double h = tN / steps;
+
+  stringstream s;
+  s << "b_" << x*100 << "_" << y*100 << "_" << theta0 << ".txt";
+  ofstream file(s.str());
+
+  for(int i=0; i<steps; i++) {
+    file << h*i << "\t" << thetas[i] << "\t" << ws[i] << endl;
+  }
 }
 
-double deriveV(double theta, double x, double y, double h = 1e-3) {
-  auto V2 = std::bind(V, std::placeholders::_1, x, y);
-  return (V2(theta - 2 * h) - 8 * V2(theta - h) + 8 * V2(theta + h) - V2(theta + 2 * h)) / (12 * h);
+void c() {
+  double x = 0.16;
+  double theta0 = 3.88203;
+  double w0 = 0;
+  size_t steps = 200;
+
+  vector<double> thetas_1, ws_1, thetas_2, ws_2;
+
+  std::tie(thetas_1, ws_1) = RK4_newton(theta0, w0, 0, 100, steps,
+                            [x](double theta, double w, double t) {
+                                return 1/I * (-G * w + F(theta, x, 0.02*t/100));
+                            });
+  std::tie(thetas_2, ws_2) = RK4_newton(thetas_1.back(), w0, 0, 100, steps,
+                            [x](double theta, double w, double t) {
+                                return 1/I * (-G * w + F(theta, x, 0.02*(1-t/100)));
+                            });
+
+  ofstream file("c.txt");
+  double h = 100./steps;
+
+  for (int i=0; i < steps; i++)
+    file <<   h*i   << "\t" << thetas_1[i] << "\t" << ws_1[i] << endl;
+  for(int i=0; i < steps; i++)
+    file << h*i+100 << "\t" << thetas_2[i] << "\t" << ws_2[i] << endl;
 }
 
+int main() {
+  ab();
 
+  b(0.16, 0, 2);
+  b(0.16, 0, 4);
+  b(0.16, 0.02, 2);
+  b(0.16, 0.02, 4);
 
-int main() { 
+  c();
 
-	const double x = 0.18;
-	const double y = 0.01;
-
-	VectorXd r0(1);
-	r0[0]=1;
-
-    double t0 = 0;
-    double tN = 4*M_PI;
-
-    VectorXd w0(1);
-    w0[0]=1;
-    size_t steps = 12;  // h = 1.0472
-    double h = (tN - t0) / steps;
-
-    vector<VectorXd> r, v;
-
-	std::tie(r, v) = RK4_newton(r0, w0, t0, tN, steps, [x,y](VectorXd theta, VectorXd w, double) { return 1/I*(-G*w[0]+F(theta[0],x,y)); });
-
-	for (int i = 0; i < 360 ; ++i)
-	{
-          double theta = M_PI * i / 180;
-          cout << i << "\t" << V(theta, x, y) << "\t" << F(theta, x, y) << "\t" << -deriveV(theta, x, y) << endl;
-        }
-
-	return 0; 
+  return 0;
 }
