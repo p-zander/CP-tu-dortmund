@@ -2,9 +2,11 @@ CXX=clang++-3.5
 CXXFLAGS=-O2 -Wall -Werror -pedantic -std=c++11
 CXXFLAGS+=$(shell pkg-config --cflags eigen3 | sed 's/I/isystem/g')
 
-all: zeeman
+all: zeeman bifurk
 
 zeeman: zeeman.cpp
+
+bifurk: bifurk.cpp
 
 # plots: elektrostatik
 # 	./elektrostatik
@@ -23,6 +25,7 @@ zeeman: zeeman.cpp
 
 clean:
 	rm -f zeeman
+	rm -f bifurk
 	rm -f *.txt
 	rm -f *.pdf
 	rm -f *.tar.gz
