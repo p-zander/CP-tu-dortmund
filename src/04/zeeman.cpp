@@ -51,6 +51,8 @@ void b(double x, double y, double theta0, double w0 = 0, double tN = 40, size_t 
   s << "1_b_" << x*100 << "_" << y*100 << "_" << theta0 << ".txt";
   ofstream file(s.str());
 
+  file << "# t \t theta \t omega" << endl;
+
   for(int i=0; i<steps; i++) {
     file << h*i << "\t" << thetas[i] << "\t" << ws[i] << endl;
   }
@@ -73,8 +75,10 @@ void c() {
                                 return 1/I * (-G * w + F(theta, x, 0.02*(1-t/100)));
                             });
 
-  ofstream file("1_c.txt");
   double h = 100./steps;
+  ofstream file("1_c.txt");
+
+  file << "# t \t theta \t omega" << endl;
 
   for (int i=0; i < steps; i++)
     file <<   h*i   << "\t" << thetas_1[i] << "\t" << ws_1[i] << endl;
