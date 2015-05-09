@@ -65,5 +65,24 @@ void to_numpy(const std::vector<T>& vec, const std::string& name, boost::python:
     if ( showcommands ) std::cout << s.str() << std::endl;
     boost::python::exec(s.str().c_str(), *global, *local);
 }
+
+std::string extractPythonException() {
+    using namespace boost::python;
+
+    PyObject *exc, *val, *tb;
+    PyErr_Fetch(&exc, &val, &tb);
+    PyErr_NormalizeException(&exc, &val, &tb);
+    handle<> hexc(exc), hval(allow_null(val)), htb(allow_null(tb));
+
+    if (!hval) {
+        return extract<std::string>(str(hexc));
+    } else {
+        object traceback(import("traceback"));
+        object format_exception(traceback.attr("format_exception"));
+        object formatted_list(format_exception(hexc, hval, htb));
+        object formatted(str("").join(formatted_list));
+        return extract<std::string>(formatted);
+    }
 }
+}  // namespace pyutils
 #endif
