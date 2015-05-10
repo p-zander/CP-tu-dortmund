@@ -22,7 +22,7 @@ int main(int argc, char const *argv[]) {
         // Retrieve the main module's namespace
         py::object global(main.attr("__dict__"));
 
-        pyutils::to_numpy(make_pair(x, y), make_pair("x", "y"), &global, &global);
+        utils::to_numpy(make_pair(x, y), make_pair("x", "y"), &global, &global);
 
         // Launch some function in Python.
         py::exec("print 'Hello from Python!' \n"

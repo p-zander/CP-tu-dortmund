@@ -9,7 +9,7 @@
 #ifndef PYUTILS_H
 #define PYUTILS_H
 
-namespace pyutils {
+namespace utils {
 template <typename T1, typename T2>
 std::vector<std::pair<T1, T2>> to_vector_of_pair(const std::pair<std::vector<T1>, std::vector<T2>>& p) {
     assert(p.first.size() == p.second.size());
