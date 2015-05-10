@@ -18,11 +18,13 @@ cleanlatex:
 
 clean: cleanlatex
 	rm -f md
+	rm -f md.o
 	rm -f *.pdf
 	rm -f *.tar.gz
 
 pack: all
 	rm -f md
+	rm -f md.o
 	rm -f md*.pdf
 	tar -czf abgabe5.tar.gz *
 
