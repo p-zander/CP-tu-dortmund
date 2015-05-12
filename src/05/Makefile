@@ -1,13 +1,16 @@
 CXX=clang++-3.5
 CXXFLAGS=-O2 -Wall -Werror -pedantic -std=c++11
 CXXFLAGS+=$(shell pkg-config --cflags eigen3 | sed 's/I/isystem/g')
+CXXFLAGS+=-Wconversion -Wfatal-errors -W -Wno-unused-parameter
 
-all: md
+all: plots
 
-# md: md.cpp
-md: md.cpp plots.py
+md: md.cpp
 	$(CXX) -c $(shell python2.7-config --cflags) $(CXXFLAGS) md.cpp 
 	$(CXX) md.o $(shell python2.7-config --ldflags) -lboost_python $(CXXFLAGS) -o md
+
+plots: md plots.py
+	./md
 
 cleanlatex:
 	rm -f *.au
@@ -28,4 +31,4 @@ pack: all
 	rm -f md*.pdf
 	tar -czf abgabe5.tar.gz *
 
-.PHONY: all clean cleanlatex pack
+.PHONY: all clean cleanlatex pack plots
