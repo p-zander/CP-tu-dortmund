@@ -8,14 +8,13 @@
 #include <utility>
 #include <functional>
 #include <vector>
-#include <array>
+#include <cmath>
 
 #include "../Utils/utils.h"
 
 using std::pair;
 using std::function;
 using std::vector;
-using std::array;
 using std::cout;
 using std::endl;
 using std::make_pair;
@@ -28,10 +27,10 @@ constexpr double L = 10;
 constexpr unsigned int N = 16;
 
 inline Vector2d F_a_one(const Vector2d &x, double t) {
-    return -24 * (pow(x.squaredNorm(), 3) - 2) / pow(x.squaredNorm(), 7) * x;
+    return 24 * x / (2 * pow(x.norm(), 14) - pow(x.norm(), -8));
 }
 
-Vector2d F_a(const array<Vector2d, N> &particles, const Vector2d &x, double t, double cutoff) {
+Vector2d F_a(const vector<Vector2d> &particles, const Vector2d &x, double t, double cutoff) {
     Vector2d F_eff(0, 0);
     for (const Vector2d &y : particles) {
         if (x == y) continue;
@@ -49,18 +48,21 @@ Vector2d F_a(const array<Vector2d, N> &particles, const Vector2d &x, double t, d
 pair<Vector2d, Vector2d> Verlet_step_one(Vector2d x_0, Vector2d v_0, double t_0, double h,
                                          const function<Vector2d(Vector2d, double)> &F) {
     Vector2d x_1 = x_0 + h * v_0 + h * h / (2 * M) * F(x_0, t_0);
+    x_1=x_1.unaryExpr([](double xi ){return xi - L * floor( xi / L ); });
     Vector2d v_1 = v_0 + h / (2 * M) * (F(x_0, t_0) + F(x_1, t_0 + h));
     return std::make_pair(x_1, v_1);
 }
 
-pair<array<Vector2d, N>, array<Vector2d, N>>
-Verlet_step(const array<Vector2d, N> &loc_0, const array<Vector2d, N> &vel_0, double t_0, double h,
-            const function<Vector2d(array<Vector2d, N>, Vector2d, double)> &F) {
+pair<vector<Vector2d>, vector<Vector2d>>
+Verlet_step(const vector<Vector2d> &loc_0, const vector<Vector2d> &vel_0, double t_0, double h,
+            const function<Vector2d(vector<Vector2d>, Vector2d, double)> &F) {
     if (loc_0.size() != vel_0.size()) {
         std::cerr << "Verlet_step: Vectors loc_0 and vel_0 should have equal size! EXIT" << endl;
         exit(EXIT_FAILURE);
     }
-    array<Vector2d, N> loc_1, vel_1;
+    vector<Vector2d> loc_1, vel_1;
+    loc_1.resize(N);
+    vel_1.resize(N);
 
     for (size_t i = 0; i < loc_0.size(); ++i) {
         Vector2d x, v;
@@ -78,7 +80,7 @@ Verlet_step(const array<Vector2d, N> &loc_0, const array<Vector2d, N> &vel_0, do
 //     }
 // }
 
-pair<array<Vector2d, N>, array<Vector2d, N>> initialize(double T_0) {
+pair<vector<Vector2d>, vector<Vector2d>> initialize(double T_0) {
     int ppa = static_cast<int>(sqrt(N));
     double dist = L / (2 * ppa);
 
@@ -94,7 +96,9 @@ pair<array<Vector2d, N>, array<Vector2d, N>> initialize(double T_0) {
     rand::variate_generator<rand::mt19937 &, rand::uniform_real_distribution<>> norm_rnd(generator, normdist);
     // Combination of distribution and generator
 
-    array<Vector2d, N> loc, vel;
+    vector<Vector2d> loc, vel;
+    loc.resize(N);
+    vel.resize(N);
     Vector2d v_mean(0, 0);
     double v_squared_mean = 0;
 
@@ -127,68 +131,68 @@ pair<array<Vector2d, N>, array<Vector2d, N>> initialize(double T_0) {
 }
 
 int main(int argc, char const *argv[]) {
-    constexpr double cutoff = L / 2;
-    constexpr double h = 0.01;
+    const double cutoff = L / 2;
+    const double h = 0.001;
 
-    constexpr double t_0 = 0;
-    constexpr double t_max = 10;
+    const double t_0 = 0;
+    const double t_max = 1e2;
 
-    constexpr double T_0 = 1;
+    const double T_0 = 0.01;
 
-    constexpr size_t steps = static_cast<size_t>((t_max - t_0) / h);
+    const size_t steps = static_cast<size_t>((t_max - t_0) / h + 1);
 
-    array<array<Vector2d, N>, steps> locations, velocities;
-
+    vector<vector<Vector2d>> locations, velocities;
+    locations.resize(steps);
+    velocities.resize(steps);
     tie(locations[0], velocities[0]) = initialize(T_0);
 
-    tie(locations[1], velocities[1]) = Verlet_step(locations[0], velocities[0], 0, h, bind(F_a, _1, _2, _3, cutoff));
-
-    // for (double t = t_0; t <= t_max; t += h) {
-    //     tie(locations_1, velocities_1) = Verlet_step(locations_0, velocities_0, t, h, bind(F_a, _1, _2, _3, cutoff));
-    // }
+    for (size_t t = 1; t < steps ; t += 1) {
+        tie(locations[t], velocities[t]) = Verlet_step(locations[t-1], velocities[t-1], t_0 + t * h , h, bind(F_a, _1, _2, _3, cutoff));
+    }
+    cout << locations[steps-1][2] << endl << velocities[steps-1][2] << endl << endl;
 
     // prepare for plotting
-    array<Vector2d, N> F_0;
+//     array<Vector2d, N> F_0;
 
-    size_t i = 0;
-    auto F = bind(F_a, locations[0], _1, t_0, cutoff);
-    for (const Vector2d &r : locations[0])
-        F_0[i++] = F(r);  // to test if the force is zero in the beginning
+//     size_t i = 0;
+//     auto F = bind(F_a, locations.back(), _1, t_0, cutoff);
+//     for (const Vector2d &r : locations.back())
+//         F_0[i++] = F(r);  // to test if the force is zero in the beginning
 
-    namespace py = boost::python;
+//     namespace py = boost::python;
 
-    try {
-        Py_Initialize();
+//     try {
+//         Py_Initialize();
 
-        // Retrieve the main module's namespace
-        py::object global(py::import("__main__").attr("__dict__"));
+//         // Retrieve the main module's namespace
+//         py::object global(py::import("__main__").attr("__dict__"));
 
-        // Import neccessary modules
-        py::exec("print 'Hello from Python!' \n"
-                 "import numpy as np \n"
-                 "print 'importing matplotlib...' \n"
-                 "from matplotlib import pyplot as plt \n"
-                 "print 'done' \n",
-                 global, global);
+//         // Import neccessary modules
+//         py::exec("print 'Hello from Python!' \n"
+//                  "import numpy as np \n"
+//                  "print 'importing matplotlib...' \n"
+//                  "from matplotlib import pyplot as plt \n"
+//                  "print 'done' \n",
+//                  global, global);
 
-        // Import variables and vectors
-        global["L"] = L;
-        global["N"] = N;
-        global["steps"] = steps;
-        global["cutoff"] = cutoff;
-        global["velocity_scale"] = 12;
-        global["force_scale"] = 1e-3;
+//         // Import variables and vectors
+//         global["L"] = L;
+//         global["N"] = N;
+//         global["steps"] = steps;
+//         global["cutoff"] = cutoff;
+//         global["velocity_scale"] = 12;
+//         global["force_scale"] = 1e-3;
 
-        utils::to_numpy(locations[0], "r_0", &global, &global);
-        utils::to_numpy(velocities[0], "v_0", &global, &global);
-        utils::to_numpy(F_0, "F_0", &global, &global);
+//         utils::to_numpy(locations.back(), "r_0", &global, &global);
+//         utils::to_numpy(velocities.back(), "v_0", &global, &global);
+//         utils::to_numpy(F_0, "F_0", &global, &global);
 
-        // Launch some function in Python.
-        py::exec_file("plots.py", global, global);
-    } catch (const py::error_already_set &) 
-{        cout << utils::extractPythonException() << endl;
-        exit(EXIT_FAILURE);
-    }
+//         // Launch some function in Python.
+//         py::exec_file("plots.py", global, global);
+//     } catch (const py::error_already_set &) 
+// {        cout << utils::extractPythonException() << endl;
+//         exit(EXIT_FAILURE);
+//     }
 
     return 0;
 }
