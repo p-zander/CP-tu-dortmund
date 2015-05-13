@@ -16,7 +16,7 @@ std::vector<std::pair<T1, T2>> to_vector_of_pair(const std::pair<std::vector<T1>
 
     std::vector<std::pair<T1, T2>> v;
 
-    for (size_t i = 0; i < p.first.size(); i++) v.push_back(std::make_pair(p.first[i], p.second[i]));
+    for (long i = 0; i < p.first.size(); i++) v.push_back(std::make_pair(p.first[i], p.second[i]));
 
     return v;
 }
@@ -34,9 +34,7 @@ std::pair<std::vector<T1>, std::vector<T2>> to_pair_of_vectors(const std::vector
     return std::make_pair(v1, v2);
 }
 
-template <typename T1, typename T2>  // funktioniert für datentypen die sich ausgeben lassen und eine repräsentation in
-                                     // python besitzen
-                                     void to_numpy(const std::pair<std::vector<T1>, std::vector<T2>> &p,
+template <typename T1, typename T2> void to_numpy(const std::pair<std::vector<T1>, std::vector<T2>> &p,
                                                    const std::pair<std::string, std::string> &n,
                                                    boost::python::object *global, boost::python::object *local,
                                                    bool showcommands = false) {
@@ -87,6 +85,27 @@ to_numpy(const std::vector<Eigen::Matrix<T, D, 1>> &vec, const std::string &name
     }
 
     s << name << " = " << name << ".reshape((" << i << ", " << D << "))" << std::endl;
+
+    if (showcommands) std::cout << s.str() << std::endl;
+    boost::python::exec(s.str().c_str(), *global, *local);
+}
+
+template <typename T,
+          int D, size_t N>
+void
+to_numpy(const std::array<Eigen::Matrix<T, D, 1>, N> &vec, const std::string &name, boost::python::object *global,
+         boost::python::object *local, bool showcommands = false) {
+    std::stringstream s;
+    s << "import numpy as np" << std::endl << name << " = np.array([])" << std::endl;
+
+    s << std::scientific;
+    for (const Eigen::Matrix<T, D, 1> &val : vec) {
+        s << name << " = np.append(" << name << ", [";
+        for (long i = 0; i < D; i++) s << val[i] << ", ";
+        s << "])" << std::endl;
+    }
+
+    s << name << " = " << name << ".reshape((" << N << ", " << D << "))" << std::endl;
 
     if (showcommands) std::cout << s.str() << std::endl;
     boost::python::exec(s.str().c_str(), *global, *local);

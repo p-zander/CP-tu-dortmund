@@ -1,7 +1,7 @@
 CXX=clang++-3.5
-CXXFLAGS=-O2 -Wall -Werror -pedantic -std=c++11
+CXXFLAGS=-O2 -Wall -Werror -Wfatal-errors -pedantic -std=c++11
 CXXFLAGS+=$(shell pkg-config --cflags eigen3 | sed 's/I/isystem/g')
-CXXFLAGS+=-Wconversion -Wfatal-errors -W -Wno-unused-parameter
+CXXFLAGS+=-Wconversion -Wno-unused-parameter -Wno-unused-variable
 
 all: plots
 
