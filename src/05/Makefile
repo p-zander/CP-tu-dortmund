@@ -7,7 +7,7 @@ all: plots
 
 md: md.cpp
 	$(CXX) -c $(shell python2.7-config --cflags) $(CXXFLAGS) md.cpp 
-	$(CXX) md.o $(shell python2.7-config --ldflags) -lboost_python $(CXXFLAGS) -o md
+	$(CXX) md.o $(shell python2.7-config --ldflags) -lboost_python -lboost_numpy $(CXXFLAGS) -o md
 
 plots: md plots.py
 	./md
@@ -23,6 +23,7 @@ clean: cleanlatex
 	rm -f md
 	rm -f md.o
 	rm -f *.pdf
+	rm -f *.png
 	rm -f *.tar.gz
 
 pack: all
