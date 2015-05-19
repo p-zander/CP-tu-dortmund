@@ -23,6 +23,8 @@ clean: cleanlatex
 	rm -f md
 	rm -f md.o
 	rm -f *.pdf
+	rm -f *.mp4
+	rm -f *.gif
 	rm -f *.png
 	rm -f *.tar.gz
 

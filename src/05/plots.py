@@ -1,56 +1,39 @@
 # coding: utf-8
+plt.plot(loc_sample[0, :, 0],   loc_sample[0,:, 1], 'bo') 
 
-plt.figure(figsize=[8, 8])
-plt.plot(r_0[:, 0], r_0[:, 1], 'bo')
+plt.quiver(loc_sample[0, :, 0], loc_sample[0,:, 1], vel_sample[0,:, 0], vel_sample[0,:, 1], scale=velocity_scale, pivot='middle', headlength=2, headaxislength=1) 
 
-if any(v_0[:, 0]) or any(v_0[:, 1]):
-    plt.quiver(r_0[:, 0], r_0[:, 1], v_0[:, 0], v_0[:, 1], scale=velocity_scale,
-               pivot='middle', headlength=2, headaxislength=1)
-if any(F_0[:, 0]) or any(F_0[:, 1]):
-    plt.quiver(r_0[:, 0], r_0[:, 1], F_0[:, 0], F_0[:, 1], scale=force_scale,
-               color='red', pivot='middle', headlength=2, headaxislength=1)
+plt.xlim(0, L)
+plt.ylim(0, L)
 
-plt.xlim(-L, 2 * L)
-plt.ylim(-L, 2 * L)
+plt.savefig('init' + file_ext)
 
-plt.hlines([0, L], -L, 2 * L, linestyles='dashed')
-plt.vlines([0, L], -L, 2 * L, linestyles='dashed')
+# for i in range(N):
+#     plt.plot(loc_sample[:, i, 0], loc_sample[:, i, 1], ',')
+# plt.savefig('time' + file_ext)
 
-for m in [-L, 0, L]:
-    for n in [-L, 0, L]:
-        if n is not 0 or m is not 0:
-            plt.plot(r_0[:, 0] + n, r_0[:, 1] + m, 'bo', alpha=0.5)
-            if any(v_0[:, 0]) or any(v_0[:, 1]):
-                plt.quiver(r_0[:, 0] + n, r_0[:, 1] + m, v_0[:, 0], v_0[:, 1],
-                           scale=velocity_scale, pivot='middle', alpha=0.5,
-                           headlength=2, headaxislength=1)
+# fig = plt.figure()
+# line, = plt.plot(loc_sample[0, :, 0], loc_sample[0,:, 1], 'bo')
 
-circle = plt.Circle(r_0[0], cutoff, color='k', fill=False, linestyle='dashdot')
-plt.gca().add_artist(circle)
+# def animate(i):
+#     line.set_xdata(loc_sample[i, :, 0])  # update the data
+#     line.set_ydata(loc_sample[i, :, 1])
+#     return line,
 
-plt.savefig('init.pdf')
+# def init():
+#     line.set_ydata(np.ma.array(loc_sample[0, :, 0], mask=True))
+#     plt.xlim(0, 8)
+#     plt.ylim(0, 8)
+#     return line,
 
-# plt.figure(figsize=[8, 8])
-# plt.plot(r_0[:, 0], r_0[:, 1], 'bo')
-# plt.plot(r_1[:, 0], r_1[:, 1], 'bo')
-# if any(v_1[:, 0]) or any(v_1[:, 1]):
-#     plt.quiver(r_1[:, 0], r_0[:, 1], v_1[:, 0], v_1[:, 1], scale=velocity_scale,
-#                pivot='middle', headlength=2, headaxislength=1)
-# if any(F_1[:, 0]) or any(F_1[:, 1]):
-#     plt.quiver(r_1[:, 0], r_1[:, 1], F_1[:, 0], F_1[:, 1], scale=force_scale,
-#                color='red', pivot='middle', headlength=2, headaxislength=1)
+# ani = animation.FuncAnimation(fig, animate, np.arange(0,len(loc_sample),samples/100), init_func=init, interval=25)
+# ani.save("time.gif", writer='imagemagick')
 
-# plt.xlim(0, L)
-# plt.ylim(0, L)
+plt.figure()
 
-# plt.hlines([0, L], -L, 2 * L, linestyles='dashed')
-# plt.vlines([0, L], -L, 2 * L, linestyles='dashed')
+plt.plot(E_kin_sample)
+plt.plot(E_pot_sample)
+plt.plot(cm_vel_sample)
+plt.plot(E_kin_sample[0:-1] + E_pot_sample[1:])
 
-# for m in [-L, 0, L]:
-#     for n in [-L, 0, L]:
-#         if n is not 0 or m is not 0:
-#             plt.plot(r_1[:, 0] + n, r_1[:, 1] + m, 'bo', alpha=0.5)
-#             plt.quiver(r_1[:, 0] + n, r_1[:, 1] + m, v_1[:, 0], v_1[:, 1],
-#                        pivot='middle', alpha=0.5, headlength=2, headaxislength=1)
-
-# plt.savefig('first_step.pdf')
+plt.savefig('energy' + file_ext)
