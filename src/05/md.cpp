@@ -15,6 +15,8 @@
 #include <cmath>
 #include <string>
 
+#include <omp.h>
+
 using std::cout;
 using std::endl;
 using std::array;
@@ -32,24 +34,53 @@ Vector2d F_LJ(const Vector2d &x, double t) {
     return -48 * x * x2i * x6i * (x6i - 0.5);
 }
 
-double V_LJ(const Vector2d &x, double t) {
-    double x6i = 1. / pow(x.squaredNorm(), 3);
-    return 4 * x6i * (x6i - 1);
+// double V_LJ(const Vector2d &x, double t) {
+//     double x6i = 1. / pow(x.squaredNorm(), 3);
+//     return 4 * x6i * (x6i - 1);
+// }
+
+// double V_LJ2(const array<Vector2d ,N> &x , double t) {
+//     double V = 0;
+//     for (size_t i = 0; i < N - 1 ; ++i) {
+//         for (size_t j = i + 1; j < N; ++j) {
+//             Vector2d r = x[j] - x[i];
+//             r = r.unaryExpr([](double xi){ return xi - L * floor(xi / L + 0.5); });
+//             if (r.norm() > cutoff) continue;
+//             double x6i = 1. / pow(r.squaredNorm(), 3);
+//             V += 4 * x6i * (x6i - 1);
+//         }
+//     }   
+// return V;
+// }
+
+double update_radial_return_V(const array<Vector2d ,N> &x , boost::multi_array<float, 1>  &g , double bins, double t){
+    double V = 0;
+    for (size_t i = 0; i < N - 1 ; ++i) {
+        for (size_t j = i + 1; j < N; ++j) {
+            Vector2d r = x[j] - x[i];
+            r = r.unaryExpr([](double xi){ return xi - L * floor(xi / L + 0.5); });
+            if (r.norm() > cutoff) continue;
+            double x6i = 1. / pow(r.squaredNorm(), 3);
+            V += 4 * x6i * (x6i - 1);
+            g[long( floor(bins * r.norm() * 2 / L) )]+=2;
+        }
+    }
+    return V;
 }
 
 std::pair<array<Vector2d, N>, double> calcForces(const array<Vector2d, N> &loc, double t) {
     array<Vector2d, N> F{{Vector2d(0, 0)}};
     double V = 0;
 
-    for (size_t i = 0; i < N; ++i) {
-        for (size_t j = 0; j < i; ++j) {
+    for (size_t i = 0; i < N - 1 ; ++i) {
+        for (size_t j = i + 1; j < N; ++j) {
             Vector2d r = loc[j] - loc[i];
             r = r.unaryExpr([](double xi){ return xi - L * floor(xi / L + 0.5); });
             if (r.norm() > cutoff) continue;
             Vector2d force = F_LJ(r, t);
             F[i] += force;
             F[j] -= force;
-            V += V_LJ(r, t);
+            // V += V_LJ(r, t);
         }
     }
 
@@ -166,15 +197,18 @@ void add_to_sample(const array<Eigen::Matrix<T1, 2, 1>, N> &vec, boost::multi_ar
 }
 
 int main() {
+    double start = omp_get_wtime();
     const double h = 0.01;
 
     const double t_0 = 0;
-    const double t_max = 1e5;
+    const double t_max = 1e4;
 
-    const double T_0 = 0.1;
+    const double T_0 = .00001;
+
+    const size_t bins = 500;
 
     const size_t steps = static_cast<size_t>((t_max - t_0) / h + 0.5);
-    const size_t samples = 10000;
+    const size_t samples = 100000;
     if (samples > steps) {
         std::cerr << "Number of samples should be less or equal number of steps! " << endl;
         exit(EXIT_FAILURE);
@@ -187,6 +221,7 @@ int main() {
     boost::multi_array<dtype, 1> E_kin_sample(boost::extents[samples]);
     boost::multi_array<dtype, 1> E_pot_sample(boost::extents[samples]);
     boost::multi_array<dtype, 1> cm_vel_sample(boost::extents[samples]);
+    boost::multi_array<dtype, 1> radial_sample(boost::extents[bins]);
 
     array<array<Vector2d, N>, 2> locations, velocities, forces;
     std::tie(locations[0], velocities[0]) = initialize(T_0);
@@ -204,15 +239,23 @@ int main() {
         if (t % sbs == 0) {
             printf((10 * t < steps) ? "%2.1f%%\b\b\b\b" : "%2.1f%%\b\b\b\b\b", static_cast<float>(100 * t / steps));
             E_kin_sample[at] = static_cast<float>(N * Temp(velocities[t % 2]));
-            E_pot_sample[at] = static_cast<float>(V);
+            //E_pot_sample[at] = static_cast<float>(V);
+            // E_pot_sample[at] = static_cast<float>(V_LJ2(locations[t %2 ], t_0 + t * h));
             cm_vel_sample[at] = static_cast<float>(CM_vel(velocities[t % 2]).norm());
+            E_pot_sample[at] = static_cast<float>(update_radial_return_V(locations[t % 2], radial_sample, bins, t_0 + t * h));
             add_to_sample(locations[t % 2], loc_sample, at);
             add_to_sample(velocities[t % 2], vel_sample, at);
             at++;
         }
     }
-    printf("%3.1f%%\ndone\n", 100.);
 
+    for (long i = 0; i < bins; i++) {
+      double dV = M_PI * (pow(i + 1, 2.0) - pow(i, 2.0)) * pow(cutoff / bins, 2.0);
+      radial_sample[i] = radial_sample[i] * static_cast<float>(L * L / (dV * N * N * samples));
+    }
+
+    printf("%3.1f%%\ndone\n", 100.);
+    cout << "seconds passed:" << omp_get_wtime()-start << endl;
     namespace py = boost::python;
     namespace np = boost::numpy;
 
@@ -242,6 +285,7 @@ int main() {
         global["sbs"] = sbs;
         global["samples"] = samples;
         global["cutoff"] = cutoff;
+        global["bins"] = bins;
 
         global["velocity_scale"] = 12;
         global["force_scale"] = 1e-3;
@@ -259,7 +303,8 @@ int main() {
                                                py::make_tuple(samples), py::make_tuple(sizeof(dtype)), py::object());
         global["cm_vel_sample"] = np::from_data(cm_vel_sample.data(), np::dtype::get_builtin<dtype>(),
                                                 py::make_tuple(samples), py::make_tuple(sizeof(dtype)), py::object());
-
+        global["radial_sample"] = np::from_data(radial_sample.data(), np::dtype::get_builtin<dtype>(),
+                                                py::make_tuple(bins), py::make_tuple(sizeof(dtype)), py::object());
         // Launch some function in Python.
         py::exec_file("plots.py", global, global);
     } catch (const py::error_already_set &) {

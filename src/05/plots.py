@@ -44,3 +44,8 @@ plt.legend(loc='best')
 # plt.plot(cm_vel_sample[:len(E_kin_sample)])
 
 plt.savefig('energy' + file_ext)
+
+plt.figure()
+plt.bar(np.arange(0,cutoff,cutoff/bins), radial_sample,cutoff/bins)
+plt.savefig('g' + file_ext)
+
