@@ -7,20 +7,15 @@
 
 #include <Python.h>
 
+#include <omp.h>
+
 #include <iostream>
-#include <functional>
-#include <utility>
 #include <tuple>
 #include <array>
+#include <vector>
 #include <cmath>
 #include <string>
 
-#include <omp.h>
-
-using std::cout;
-using std::endl;
-using std::array;
-using std::function;
 using Eigen::Vector2d;
 
 constexpr double M = 1;
@@ -28,111 +23,97 @@ constexpr double L = 8;
 constexpr double cutoff = L / 2;
 constexpr unsigned int N = 16;
 
-Vector2d F_LJ(const Vector2d &x, double t) {
+inline Vector2d F_LJ(const Vector2d &x, double t) {
     double x2i = 1. / x.squaredNorm();
     double x6i = pow(x2i, 3);
-    return -48 * x * x2i * x6i * (x6i - 0.5);
+    return 48 * x * x2i * x6i * (x6i - 0.5);
 }
 
-// double V_LJ(const Vector2d &x, double t) {
-//     double x6i = 1. / pow(x.squaredNorm(), 3);
-//     return 4 * x6i * (x6i - 1);
-// }
+inline double V_LJ(const Vector2d &x, double t) {
+    double x6i = 1. / pow(x.squaredNorm(), 3);
+    return 4 * x6i * (x6i - 1);
+}
 
-// double V_LJ2(const array<Vector2d ,N> &x , double t) {
-//     double V = 0;
-//     for (size_t i = 0; i < N - 1 ; ++i) {
-//         for (size_t j = i + 1; j < N; ++j) {
-//             Vector2d r = x[j] - x[i];
-//             r = r.unaryExpr([](double xi){ return xi - L * floor(xi / L + 0.5); });
-//             if (r.norm() > cutoff) continue;
-//             double x6i = 1. / pow(r.squaredNorm(), 3);
-//             V += 4 * x6i * (x6i - 1);
-//         }
-//     }   
-// return V;
-// }
-
-double update_radial_return_V(const array<Vector2d ,N> &x , boost::multi_array<float, 1>  &g , double bins, double t){
+double update_radial_return_V(const std::array<Vector2d, N> &x, std::vector<float> &g, int bins, double t) {
     double V = 0;
-    for (size_t i = 0; i < N - 1 ; ++i) {
+    static Vector2d r;
+
+    for (size_t i = 0; i < N - 1; ++i) {
         for (size_t j = i + 1; j < N; ++j) {
-            Vector2d r = x[j] - x[i];
-            r = r.unaryExpr([](double xi){ return xi - L * floor(xi / L + 0.5); });
+            r = (x[j] - x[i]).unaryExpr([](double xi) { return xi - L * floor(xi / L + 0.5); });
             if (r.norm() > cutoff) continue;
-            double x6i = 1. / pow(r.squaredNorm(), 3);
-            V += 4 * x6i * (x6i - 1);
-            g[long( floor(bins * r.norm() * 2 / L) )]+=2;
+            V += V_LJ(r, t);
+            g[size_t(floor(bins * r.norm() * 1. / cutoff))] += 2;
         }
     }
+
     return V;
 }
 
-std::pair<array<Vector2d, N>, double> calcForces(const array<Vector2d, N> &loc, double t) {
-    array<Vector2d, N> F{{Vector2d(0, 0)}};
-    double V = 0;
+std::array<Vector2d, N> calcForces(const std::array<Vector2d, N> &loc, double t) {
+    std::array<Vector2d, N> F{{Vector2d(0, 0)}};
+    static Vector2d r;
+    static Vector2d force;
 
-    for (size_t i = 0; i < N - 1 ; ++i) {
-        for (size_t j = i + 1; j < N; ++j) {
-            Vector2d r = loc[j] - loc[i];
-            r = r.unaryExpr([](double xi){ return xi - L * floor(xi / L + 0.5); });
+    for (size_t i = 0; i < N - 1; i++) {
+        for (size_t j = i + 1; j < N; j++) {
+            r = (loc[i] - loc[j]).unaryExpr([](double xi) { return xi - L * floor(xi / L + 0.5); });
             if (r.norm() > cutoff) continue;
-            Vector2d force = F_LJ(r, t);
+            force = F_LJ(r, t);
             F[i] += force;
             F[j] -= force;
-            // V += V_LJ(r, t);
         }
     }
 
-    return make_pair(F, V);
+    return F;
 }
 
-std::tuple<array<Vector2d, N>, array<Vector2d, N>, array<Vector2d, N>, double>
-Verlet_step(const array<Vector2d, N> &loc_0, const array<Vector2d, N> &vel_0, const array<Vector2d, N> &F_0, double t_0, double h) {
-    array<Vector2d, N> loc_1, vel_1;
+std::tuple<std::array<Vector2d, N>, std::array<Vector2d, N>, std::array<Vector2d, N>>
+Verlet_step(const std::array<Vector2d, N> &loc_0, const std::array<Vector2d, N> &vel_0,
+            const std::array<Vector2d, N> &F_0, double t_0, double h) {
+    static std::array<Vector2d, N> loc_1, vel_1;
 
     for (size_t i = 0; i < N; ++i) {
-        loc_1[i] = loc_0[i] + h * vel_0[i] + h * h * F_0[i] / (2 * M);
-        loc_1[i] = loc_1[i].unaryExpr([](double xi) { return xi - L * floor(xi / L); });
+        loc_1[i] = (loc_0[i] + h * vel_0[i] + h * h * F_0[i] / (2 * M))
+                       .unaryExpr([](double xi) { return xi - L * floor(xi / L); });
     }
-    double V_1;
-    array<Vector2d, N> F_1;
 
-    std::tie(F_1, V_1) = calcForces(loc_1, t_0 + h);
+    static std::array<Vector2d, N> F_1;
+    F_1 = calcForces(loc_1, t_0 + h);
+
     for (size_t i = 0; i < N; ++i) {
         vel_1[i] = vel_0[i] + h * (F_0[i] + F_1[i]) / (2 * M);
     }
-    return std::make_tuple(loc_1, vel_1, F_1, V_1);
+
+    return std::make_tuple(loc_1, vel_1, F_1);
 }
 
-double Temp(const array<Vector2d, N> &vel) {
+double Temp(const std::array<Vector2d, N> &vel) {
     double v_squared_mean = 0;
     for (const Vector2d &v : vel) v_squared_mean += v.squaredNorm();
     return M / 2 * v_squared_mean / N;
 }
 
-Vector2d CM_vel(const array<Vector2d, N> &vel) {
+Vector2d CM_vel(const std::array<Vector2d, N> &vel) {
     return 1. / N * std::accumulate(vel.begin(), vel.end(), Vector2d(0, 0));
 }
 
-std::pair<array<Vector2d, N>, array<Vector2d, N>> initialize(double T_0) {
+std::tuple<std::array<Vector2d, N>, std::array<Vector2d, N>> initialize(double T_0) {
     int ppa = static_cast<int>(sqrt(N));
     double dist = L / (2 * ppa);
 
     if (pow(ppa, 2) != N) {
-        std::cerr << "initialize: sqrt(N) should be an integer! EXIT" << endl;
+        std::cerr << "initialize: sqrt(N) should be an integer! EXIT" << std::endl;
         exit(EXIT_FAILURE);
     }
 
     namespace rand = boost::random;
 
-    rand::mt19937 generator;                                // Mersenne Twister Generator
-    // generator.seed(static_cast<unsigned int>(std::time(0)));
+    rand::mt19937 generator;  // Mersenne Twister Generator
     rand::uniform_real_distribution<> normdist(-1.0, 1.0);  // Distribution
     rand::variate_generator<rand::mt19937 &, rand::uniform_real_distribution<>> norm_rnd(generator, normdist);
-    // Combination of distribution and generator
 
-    array<Vector2d, N> loc, vel;
+    std::array<Vector2d, N> loc, vel;
     Vector2d v_mean(0, 0);
 
     size_t i = 0;
@@ -152,43 +133,40 @@ std::pair<array<Vector2d, N>, array<Vector2d, N>> initialize(double T_0) {
 
     for (Vector2d &v : vel) v -= v_mean;
     double temp = Temp(vel);
-    // cout << "Temp without scaling: " << temp << endl;
     double scale = sqrt(T_0 / temp);
     for (Vector2d &v : vel) v *= scale;
 
     Vector2d cm(CM_vel(vel));
-    cout << "Init temperature: " << Temp(vel) << "\nInit CM velocity: ";
+    std::cout << "Init temperature: " << Temp(vel) << "\nInit CM velocity: ";
+    std::cout << cm.norm() << std::endl;
 
-    if (cm.norm() < 1e-16)
-        cout << "0.0" << endl;
-    else
-        cout << cm.norm() << endl;
-
-    return std::make_pair(loc, vel);
+    return std::make_tuple(loc, vel);
 }
 
+// 
 std::string extractPythonException() {
-    using namespace boost::python;
+    namespace py = boost::python;
 
     PyObject *exc, *val, *tb;
     PyErr_Fetch(&exc, &val, &tb);
     PyErr_NormalizeException(&exc, &val, &tb);
-    handle<> hexc(exc), hval(allow_null(val)), htb(allow_null(tb));
+    py::handle<> hexc(exc), hval(py::allow_null(val)), htb(py::allow_null(tb));
 
     if (!hval) {
-        return extract<std::string>(str(hexc));
+        return py::extract<std::string>(py::str(hexc));
     } else {
-        object traceback(import("traceback"));
-        object format_exception(traceback.attr("format_exception"));
-        object formatted_list(format_exception(hexc, hval, htb));
-        object formatted(str("").join(formatted_list));
-        return extract<std::string>(formatted);
+        py::object traceback(py::import("traceback"));
+        py::object format_exception(traceback.attr("format_exception"));
+        py::object formatted_list(format_exception(hexc, hval, htb));
+        py::object formatted(py::str("").join(formatted_list));
+        return py::extract<std::string>(formatted);
     }
 }
 
+// sampling function to add all particles to the location and velocity samples
 template <typename T1, typename T2>
-void add_to_sample(const array<Eigen::Matrix<T1, 2, 1>, N> &vec, boost::multi_array<T2, 3> &sample, long at) {
-    long i = 0;
+void add_to_sample(const std::array<Eigen::Matrix<T1, 2, 1>, N> &vec, boost::multi_array<T2, 3> &sample, size_t at) {
+    size_t i = 0;
     for (const Eigen::Matrix<T1, 2, 1> &r : vec) {
         sample[at][i][0] = static_cast<T2>(r[0]);
         sample[at][i][1] = static_cast<T2>(r[1]);
@@ -198,64 +176,83 @@ void add_to_sample(const array<Eigen::Matrix<T1, 2, 1>, N> &vec, boost::multi_ar
 
 int main() {
     double start = omp_get_wtime();
+
+    // setting constants
     const double h = 0.01;
 
     const double t_0 = 0;
     const double t_max = 1e4;
 
-    const double T_0 = .00001;
+    const double T_0 = 1;
 
     const size_t bins = 500;
 
+    // steps and number of samples
+    const size_t samples = 1000;
     const size_t steps = static_cast<size_t>((t_max - t_0) / h + 0.5);
-    const size_t samples = 100000;
-    if (samples > steps) {
-        std::cerr << "Number of samples should be less or equal number of steps! " << endl;
-        exit(EXIT_FAILURE);
-    }
     const size_t sbs = static_cast<size_t>(steps * 1. / samples);  // steps between samples
 
-    typedef float dtype;
+    if (samples > steps) {
+        std::cerr << "Number of samples should be less or equal number of steps! " << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // arrays for storage of sample data
+    using dtype = float;
     boost::multi_array<dtype, 3> loc_sample(boost::extents[samples][N][2]);
     boost::multi_array<dtype, 3> vel_sample(boost::extents[samples][N][2]);
-    boost::multi_array<dtype, 1> E_kin_sample(boost::extents[samples]);
-    boost::multi_array<dtype, 1> E_pot_sample(boost::extents[samples]);
-    boost::multi_array<dtype, 1> cm_vel_sample(boost::extents[samples]);
-    boost::multi_array<dtype, 1> radial_sample(boost::extents[bins]);
+    std::array<dtype, samples> E_kin_sample;
+    std::array<dtype, samples> E_pot_sample;
+    std::array<dtype, samples> cm_vel_sample;
+    std::vector<float> radial_sample(bins);
 
-    array<array<Vector2d, N>, 2> locations, velocities, forces;
+    // initialization
+    std::array<std::array<Vector2d, N>, 2> locations, velocities, forces;
     std::tie(locations[0], velocities[0]) = initialize(T_0);
-    std::tie(forces[0], std::ignore) = calcForces(locations[0], t_0);
+    forces[0] = calcForces(locations[0], t_0);
+    for (const Vector2d &f : forces[0]) std::cout << f << std::endl;
 
+    // sample init status
     add_to_sample(locations[0], loc_sample, 0);
     add_to_sample(velocities[0], vel_sample, 0);
 
-    cout << "Verlet in progress:  " << std::flush;
-    double V;
-    long at = 1;
+    E_kin_sample[0] = static_cast<dtype>(N * Temp(velocities[0]));
+    cm_vel_sample[0] = static_cast<dtype>(CM_vel(velocities[0]).norm());
+    double V = update_radial_return_V(locations[0], radial_sample, bins, t_0);
+    E_pot_sample[0] = static_cast<dtype>(V);
+
+    // start verlet algorithm
+    std::cout << "Verlet in progress:  " << std::flush;
+    size_t at = 1;
+
     for (size_t t = 1; t < steps; t++) {
-        std::tie(locations[t % 2], velocities[t % 2], forces[t % 2], V) =
+        std::tie(locations[t % 2], velocities[t % 2], forces[t % 2]) =
             Verlet_step(locations[(t + 1) % 2], velocities[(t + 1) % 2], forces[(t + 1) % 2], t_0 + t * h, h);
+
         if (t % sbs == 0) {
-            printf((10 * t < steps) ? "%2.1f%%\b\b\b\b" : "%2.1f%%\b\b\b\b\b", static_cast<float>(100 * t / steps));
-            E_kin_sample[at] = static_cast<float>(N * Temp(velocities[t % 2]));
-            //E_pot_sample[at] = static_cast<float>(V);
-            // E_pot_sample[at] = static_cast<float>(V_LJ2(locations[t %2 ], t_0 + t * h));
-            cm_vel_sample[at] = static_cast<float>(CM_vel(velocities[t % 2]).norm());
-            E_pot_sample[at] = static_cast<float>(update_radial_return_V(locations[t % 2], radial_sample, bins, t_0 + t * h));
             add_to_sample(locations[t % 2], loc_sample, at);
             add_to_sample(velocities[t % 2], vel_sample, at);
+
+            E_kin_sample[at] = static_cast<dtype>(N * Temp(velocities[t % 2]));
+            cm_vel_sample[at] = static_cast<dtype>(CM_vel(velocities[t % 2]).norm());
+            double V = update_radial_return_V(locations[t % 2], radial_sample, bins, t_0 + t * h);
+            E_pot_sample[at] = static_cast<dtype>(V);
+
+            printf((10 * t < steps) ? "%2.1f%%\b\b\b\b" : "%2.1f%%\b\b\b\b\b", static_cast<double>(100 * t / steps));
             at++;
         }
     }
 
-    for (long i = 0; i < bins; i++) {
-      double dV = M_PI * (pow(i + 1, 2.0) - pow(i, 2.0)) * pow(cutoff / bins, 2.0);
-      radial_sample[i] = radial_sample[i] * static_cast<float>(L * L / (dV * N * N * samples));
+    // renormalization of g(r)
+    for (size_t i = 0; i < bins; i++) {
+        double dV = M_PI * (pow(i + 1, 2.0) - pow(i, 2.0)) * pow(cutoff / bins, 2.0);
+        radial_sample[i] *= static_cast<float>(L * L / (dV * N * N * samples));
     }
 
     printf("%3.1f%%\ndone\n", 100.);
-    cout << "seconds passed:" << omp_get_wtime()-start << endl;
+    std::cout << "seconds passed: " << omp_get_wtime() - start << std::endl;
+
+    //––– plotting with python ––––––––––––––––––––––––––––––––––––––––––––––––
     namespace py = boost::python;
     namespace np = boost::numpy;
 
@@ -273,6 +270,8 @@ int main() {
                  "from matplotlib import pyplot as plt \n"
                  "from matplotlib import animation\n"
                  "plt.switch_backend('AGG') \n"
+                 "plt.style.use('ggplot') \n"
+                 "print 'done' \n"
                  "print 'plotting...' \n",
                  global, global);
 
@@ -290,8 +289,8 @@ int main() {
         global["velocity_scale"] = 12;
         global["force_scale"] = 1e-3;
 
-        py::exec("strides_1 = np.ndarray((samples, N, 2), np.float32).strides", global, global);
-        py::tuple strides_1 = py::extract<py::tuple>(global["strides_1"]);
+        py::tuple strides_1 =
+            static_cast<py::tuple>(py::eval("np.ndarray((samples, N, 2), np.float32).strides", global, global));
 
         global["loc_sample"] = np::from_data(loc_sample.data(), np::dtype::get_builtin<dtype>(),
                                              py::make_tuple(samples, N, 2), strides_1, py::object());
@@ -305,10 +304,11 @@ int main() {
                                                 py::make_tuple(samples), py::make_tuple(sizeof(dtype)), py::object());
         global["radial_sample"] = np::from_data(radial_sample.data(), np::dtype::get_builtin<dtype>(),
                                                 py::make_tuple(bins), py::make_tuple(sizeof(dtype)), py::object());
-        // Launch some function in Python.
+
+        // Launch some function in Python
         py::exec_file("plots.py", global, global);
     } catch (const py::error_already_set &) {
-        cout << extractPythonException() << endl;
+        std::cout << extractPythonException() << std::endl;
         exit(EXIT_FAILURE);
     }
 
