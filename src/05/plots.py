@@ -1,4 +1,5 @@
 # coding: utf-8
+
 plt.plot(loc_sample[0, :, 0],   loc_sample[0,:, 1], 'bo') 
 
 plt.quiver(loc_sample[0, :, 0], loc_sample[0,:, 1], vel_sample[0,:, 0], vel_sample[0,:, 1], scale=velocity_scale, pivot='middle', headlength=2, headaxislength=1) 
@@ -31,9 +32,15 @@ plt.savefig('init' + file_ext)
 
 plt.figure()
 
-plt.plot(E_kin_sample)
-plt.plot(E_pot_sample)
-plt.plot(cm_vel_sample)
-plt.plot(E_kin_sample[0:-1] + E_pot_sample[1:])
+time = np.arange(0, t_max, sbs)
+
+plt.plot(E_kin_sample, label=u'$E_{kin}$')
+plt.plot(E_pot_sample, label=u'$E_{pot}$')
+plt.plot(E_pot_sample+E_kin_sample, label=u'$E_{tot}$')
+plt.plot(cm_vel_sample, label=u'$v_{CM}$')
+plt.ylim(-40, 40)
+plt.legend(loc='best')
+
+# plt.plot(cm_vel_sample[:len(E_kin_sample)])
 
 plt.savefig('energy' + file_ext)

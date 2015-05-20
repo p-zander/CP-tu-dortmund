@@ -10,6 +10,7 @@
 #include <iostream>
 #include <functional>
 #include <utility>
+#include <tuple>
 #include <array>
 #include <cmath>
 #include <string>
@@ -28,7 +29,7 @@ constexpr unsigned int N = 16;
 Vector2d F_LJ(const Vector2d &x, double t) {
     double x2i = 1. / x.squaredNorm();
     double x6i = pow(x2i, 3);
-    return 48 * x * x2i * x6i * (x6i - 0.5);
+    return -48 * x * x2i * x6i * (x6i - 0.5);
 }
 
 double V_LJ(const Vector2d &x, double t) {
@@ -36,52 +37,41 @@ double V_LJ(const Vector2d &x, double t) {
     return 4 * x6i * (x6i - 1);
 }
 
-std::pair<array<Vector2d, N>, double> forces(const array<Vector2d, N> &loc, double t) {
+std::pair<array<Vector2d, N>, double> calcForces(const array<Vector2d, N> &loc, double t) {
     array<Vector2d, N> F{{Vector2d(0, 0)}};
     double V = 0;
 
-    for (size_t i = 0; i < N - 1; ++i) {
-        for (size_t j = i + 1; j < N; ++j) {
-            Vector2d r = loc[i] - loc[j];
-            for (int k = -1; k < 2; ++k) {
-                for (int m = -1; m < 2; ++m) {
-                    Vector2d r_new = r + Vector2d(k * L, m * L);
-                    if (r_new.norm() > cutoff) continue;
-                    Vector2d force = F_LJ(r_new, t);
-                    F[j] += force;
-                    F[i] -= force;
-                    V += V_LJ(r, t);
-                }
-            }
+    for (size_t i = 0; i < N; ++i) {
+        for (size_t j = 0; j < i; ++j) {
+            Vector2d r = loc[j] - loc[i];
+            r = r.unaryExpr([](double xi){ return xi - L * floor(xi / L + 0.5); });
+            if (r.norm() > cutoff) continue;
+            Vector2d force = F_LJ(r, t);
+            F[i] += force;
+            F[j] -= force;
+            V += V_LJ(r, t);
         }
     }
 
     return make_pair(F, V);
 }
 
-std::tuple<array<Vector2d, N>, array<Vector2d, N>, double>
-Verlet_step(const array<Vector2d, N> &loc_0, const array<Vector2d, N> &vel_0, double t_0, double h) {
-    if (loc_0.size() != vel_0.size()) {
-        std::cerr << "Verlet_step: Vectors loc_0 and vel_0 should have equal size! EXIT" << endl;
-        exit(EXIT_FAILURE);
-    }
+std::tuple<array<Vector2d, N>, array<Vector2d, N>, array<Vector2d, N>, double>
+Verlet_step(const array<Vector2d, N> &loc_0, const array<Vector2d, N> &vel_0, const array<Vector2d, N> &F_0, double t_0, double h) {
     array<Vector2d, N> loc_1, vel_1;
 
-    array<Vector2d, N> F_0;
-    std::tie(F_0, std::ignore) = forces(loc_0, t_0);
-
     for (size_t i = 0; i < N; ++i) {
-        loc_1[i] = (loc_0[i] + h * vel_0[i] + h * h * F_0[i] / (2 * M))
-                       .unaryExpr([](double xi) { return xi - L * floor(xi / L); });
+        loc_1[i] = loc_0[i] + h * vel_0[i] + h * h * F_0[i] / (2 * M);
+        loc_1[i] = loc_1[i].unaryExpr([](double xi) { return xi - L * floor(xi / L); });
     }
     double V_1;
     array<Vector2d, N> F_1;
 
-    std::tie(F_1, V_1) = forces(loc_1, t_0);
+    std::tie(F_1, V_1) = calcForces(loc_1, t_0 + h);
     for (size_t i = 0; i < N; ++i) {
         vel_1[i] = vel_0[i] + h * (F_0[i] + F_1[i]) / (2 * M);
     }
-    return std::make_tuple(loc_1, vel_1, V_1);
+    return std::make_tuple(loc_1, vel_1, F_1, V_1);
 }
 
 double Temp(const array<Vector2d, N> &vel) {
@@ -106,6 +96,7 @@ std::pair<array<Vector2d, N>, array<Vector2d, N>> initialize(double T_0) {
     namespace rand = boost::random;
 
     rand::mt19937 generator;                                // Mersenne Twister Generator
+    // generator.seed(static_cast<unsigned int>(std::time(0)));
     rand::uniform_real_distribution<> normdist(-1.0, 1.0);  // Distribution
     rand::variate_generator<rand::mt19937 &, rand::uniform_real_distribution<>> norm_rnd(generator, normdist);
     // Combination of distribution and generator
@@ -137,7 +128,10 @@ std::pair<array<Vector2d, N>, array<Vector2d, N>> initialize(double T_0) {
     Vector2d cm(CM_vel(vel));
     cout << "Init temperature: " << Temp(vel) << "\nInit CM velocity: ";
 
-    cout << (cm.norm() < 1e-16) ? "0.0" : cm.norm() << endl;
+    if (cm.norm() < 1e-16)
+        cout << "0.0" << endl;
+    else
+        cout << cm.norm() << endl;
 
     return std::make_pair(loc, vel);
 }
@@ -172,12 +166,12 @@ void add_to_sample(const array<Eigen::Matrix<T1, 2, 1>, N> &vec, boost::multi_ar
 }
 
 int main() {
-    const double h = 0.001;
+    const double h = 0.01;
 
     const double t_0 = 0;
-    const double t_max = 1e3;
+    const double t_max = 1e5;
 
-    const double T_0 = 0.01;
+    const double T_0 = 0.1;
 
     const size_t steps = static_cast<size_t>((t_max - t_0) / h + 0.5);
     const size_t samples = 10000;
@@ -194,8 +188,10 @@ int main() {
     boost::multi_array<dtype, 1> E_pot_sample(boost::extents[samples]);
     boost::multi_array<dtype, 1> cm_vel_sample(boost::extents[samples]);
 
-    array<array<Vector2d, N>, 2> locations, velocities;
+    array<array<Vector2d, N>, 2> locations, velocities, forces;
     std::tie(locations[0], velocities[0]) = initialize(T_0);
+    std::tie(forces[0], std::ignore) = calcForces(locations[0], t_0);
+
     add_to_sample(locations[0], loc_sample, 0);
     add_to_sample(velocities[0], vel_sample, 0);
 
@@ -203,8 +199,8 @@ int main() {
     double V;
     long at = 1;
     for (size_t t = 1; t < steps; t++) {
-        std::tie(locations[t % 2], velocities[t % 2], V) =
-            Verlet_step(locations[(t + 1) % 2], velocities[(t + 1) % 2], t_0 + t * h, h);
+        std::tie(locations[t % 2], velocities[t % 2], forces[t % 2], V) =
+            Verlet_step(locations[(t + 1) % 2], velocities[(t + 1) % 2], forces[(t + 1) % 2], t_0 + t * h, h);
         if (t % sbs == 0) {
             printf((10 * t < steps) ? "%2.1f%%\b\b\b\b" : "%2.1f%%\b\b\b\b\b", static_cast<float>(100 * t / steps));
             E_kin_sample[at] = static_cast<float>(N * Temp(velocities[t % 2]));
@@ -242,6 +238,8 @@ int main() {
         // Import variables and vectors
         global["L"] = L;
         global["N"] = N;
+        global["t_max"] = t_max;
+        global["sbs"] = sbs;
         global["samples"] = samples;
         global["cutoff"] = cutoff;
 
@@ -250,19 +248,17 @@ int main() {
 
         py::exec("strides_1 = np.ndarray((samples, N, 2), np.float32).strides", global, global);
         py::tuple strides_1 = py::extract<py::tuple>(global["strides_1"]);
-        py::exec("strides_2 = np.ndarray((samples), np.float32).strides", global, global);
-        py::tuple strides_2 = py::extract<py::tuple>(global["strides_2"]);
 
         global["loc_sample"] = np::from_data(loc_sample.data(), np::dtype::get_builtin<dtype>(),
                                              py::make_tuple(samples, N, 2), strides_1, py::object());
         global["vel_sample"] = np::from_data(vel_sample.data(), np::dtype::get_builtin<dtype>(),
                                              py::make_tuple(samples, N, 2), strides_1, py::object());
         global["E_kin_sample"] = np::from_data(E_kin_sample.data(), np::dtype::get_builtin<dtype>(),
-                                               py::make_tuple(samples), strides_2, py::object());
+                                               py::make_tuple(samples), py::make_tuple(sizeof(dtype)), py::object());
         global["E_pot_sample"] = np::from_data(E_pot_sample.data(), np::dtype::get_builtin<dtype>(),
-                                               py::make_tuple(samples), strides_2, py::object());
+                                               py::make_tuple(samples), py::make_tuple(sizeof(dtype)), py::object());
         global["cm_vel_sample"] = np::from_data(cm_vel_sample.data(), np::dtype::get_builtin<dtype>(),
-                                                py::make_tuple(samples), strides_2, py::object());
+                                                py::make_tuple(samples), py::make_tuple(sizeof(dtype)), py::object());
 
         // Launch some function in Python.
         py::exec_file("plots.py", global, global);
