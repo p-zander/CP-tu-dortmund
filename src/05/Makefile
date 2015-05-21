@@ -10,7 +10,13 @@ md: md.cpp
 	$(CXX) md.o $(shell python2.7-config --ldflags) -lboost_python -lboost_numpy $(CXXFLAGS) -o md
 
 plots: md plots.py
-	./md
+	./md 0.01
+	./md 1
+	./md 0.8
+	./md 0.6
+	./md 0.4
+	./md 0.2
+	./md 1e-10
 
 cleanlatex:
 	rm -f *.au
@@ -31,7 +37,6 @@ clean: cleanlatex
 pack: all
 	rm -f md
 	rm -f md.o
-	rm -f md*.pdf
 	tar -czf abgabe5.tar.gz *
 
 .PHONY: all clean cleanlatex pack plots

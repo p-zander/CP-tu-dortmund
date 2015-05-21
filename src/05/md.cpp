@@ -4,6 +4,7 @@
 #include <boost/multi_array.hpp>
 #include <boost/python.hpp>
 #include <boost/numpy.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <Python.h>
 
@@ -34,9 +35,18 @@ inline Vector2d F_LJ(const Vector2d &x, double t) {
 }
 
 // Lennard-Jones potential
-inline double V_LJ(const Vector2d &x, double t) {
-    double x6i = 1. / pow(x.squaredNorm(), 3);
-    return 4 * x6i * (x6i - 1);
+double V_LJ(const std::array<Vector2d, N> &x, double t) {
+    double V = 0;
+    Vector2d r;
+    for (size_t i = 0; i < N - 1; ++i) {
+        for (size_t j = i + 1; j < N; ++j) {
+            r = (x[j] - x[i]).unaryExpr([](double xi) { return xi - L * floor(xi / L + 0.5); });
+            if (r.norm() >= cutoff) continue;
+            double x6i = 1. / pow(r.squaredNorm(), 3);
+            V += 4 * x6i * (x6i - 1);
+        }
+    }
+    return V;
 }
 
 // temperature, i.e. kinetical energy / N
@@ -54,13 +64,13 @@ Vector2d CM_vel(const std::array<Vector2d, N> &vel) {
 // calculation of all the N force vectors
 std::array<Vector2d, N> calcForces(const std::array<Vector2d, N> &loc, double t) {
     std::array<Vector2d, N> F{{Vector2d(0, 0)}};
-    static Vector2d r;
-    static Vector2d force;
+    Vector2d r;
+    Vector2d force{0,0};
 
     for (size_t i = 0; i < N - 1; ++i) {
         for (size_t j = i + 1; j < N; ++j) {
             r = (loc[i] - loc[j]).unaryExpr([](double xi) { return xi - L * floor(xi / L + 0.5); });
-            if (r.norm() > cutoff) continue;
+            if (r.norm() >= cutoff) continue;
             force = F_LJ(r, t);
             F[i] += force;
             F[j] -= force;
@@ -70,27 +80,21 @@ std::array<Vector2d, N> calcForces(const std::array<Vector2d, N> &loc, double t)
     return F;
 }
 
-// calculate the potential energy and on-the-go update the given data for radial pair distribution function.
-// As it is only used for sampling where both V and g(r) is updated, it's okay to do both in one step
-double update_radial_return_V(const std::array<Vector2d, N> &x, std::array<float, bins> &g, int bins, double t) {
-    double V = 0;
-    static Vector2d r;
-
+// update bins for g(r)
+void update_radial(const std::array<Vector2d, N> &x, std::array<float, bins> &g, size_t bins) {
+    Vector2d r;
     for (size_t i = 0; i < N - 1; ++i) {
         for (size_t j = i + 1; j < N; ++j) {
             r = (x[j] - x[i]).unaryExpr([](double xi) { return xi - L * floor(xi / L + 0.5); });
-            if (r.norm() > cutoff) continue;
-            V += V_LJ(r, t);
+            if (r.norm() >= cutoff) continue;
             size_t index = size_t(floor(bins * r.norm() / cutoff));
             if (index > bins) {
-                std::cerr << "ERROR: index for g is out of range. check computation! EXIT" << std::endl;
+                std::cerr << "ERROR: index for g is out of range. check computation! EXIT " << std::endl;
                 exit(EXIT_FAILURE);
             }
-            if (t > t_aqui) g[index] += 2;
+            g[index] += 2;
         }
     }
-
-    return V;
 }
 
 // actual verlet step using given locations, velocities and forces from the next step and
@@ -99,14 +103,14 @@ double update_radial_return_V(const std::array<Vector2d, N> &x, std::array<float
 std::tuple<std::array<Vector2d, N>, std::array<Vector2d, N>, std::array<Vector2d, N>>
 Verlet_step(const std::array<Vector2d, N> &loc_0, const std::array<Vector2d, N> &vel_0,
             const std::array<Vector2d, N> &F_0, double t_0, double h) {
-    static std::array<Vector2d, N> loc_1, vel_1;
+    std::array<Vector2d, N> loc_1, vel_1;
 
     for (size_t i = 0; i < N; ++i) {
         loc_1[i] = (loc_0[i] + h * vel_0[i] + h * h * F_0[i] / (2 * M))
                        .unaryExpr([](double xi) { return xi - L * floor(xi / L); });
     }
 
-    static std::array<Vector2d, N> F_1;
+    std::array<Vector2d, N> F_1;
     F_1 = calcForces(loc_1, t_0 + h);
 
     for (size_t i = 0; i < N; ++i) {
@@ -194,17 +198,23 @@ void add_to_sample(const std::array<Eigen::Matrix<T1, 2, 1>, N> &vec, boost::mul
     }
 }
 
-int main() {
+int main(int argc, char const *argv[]) {
+    if (argc != 2) {
+        std::cerr << "Function only takes one Argument! Please only pass a Value for T_0! EXIT" << std::endl;
+        exit(EXIT_FAILURE);
+    }
     double start = omp_get_wtime();
 
     // setting constants
     const double h = 0.01;
 
     const double t_0 = 0;
-    const double t_max = 1e3;
+    const double t_max = 1e4;
 
+    const double T_0 = boost::lexical_cast<double>(argv[1]);
+    // const double T_0 = 0.0;
     // Init temperature varies from mean temperature after equilibration
-    const double T_0 = 1.000;  // yiedls T_mean = 1.4467
+    // const double T_0 = 1.000;  // yiedls T_mean = 1.4467
     // const double T_0 = 0.800;  // yiedls T_mean = 1.2614
     // const double T_0 = 0.600;  // yiedls T_mean = 1.0957
     // const double T_0 = 0.500;  // yiedls T_mean = 1.0072
@@ -215,7 +225,8 @@ int main() {
     // const double T_0 = 1e-10;  // yiedls T_mean = 0.6474
 
     // steps and number of samples
-    const size_t samples = 1000;
+    const size_t samples = 10000;
+
     const size_t steps = static_cast<size_t>((t_max - t_0) / h + 0.5);
     const size_t sbs = static_cast<size_t>(steps * 1. / samples);  // steps between samples
 
@@ -245,8 +256,7 @@ int main() {
 
     E_kin_sample[0] = static_cast<dtype>(N * Temp(velocities[0]));
     cm_vel_sample[0] = static_cast<dtype>(CM_vel(velocities[0]).norm());
-    double V = update_radial_return_V(locations[0], radial_sample, bins, t_0);
-    E_pot_sample[0] = static_cast<dtype>(V);
+    E_pot_sample[0] = static_cast<dtype>(V_LJ(locations[0], t_0));
 
     // start verlet algorithm
     std::cout << "Verlet in progress:  " << std::flush;
@@ -256,7 +266,7 @@ int main() {
         std::tie(locations[t % 2], velocities[t % 2], forces[t % 2]) =
             Verlet_step(locations[(t + 1) % 2], velocities[(t + 1) % 2], forces[(t + 1) % 2], t_0 + t * h, h);
 
-        double V = update_radial_return_V(locations[t % 2], radial_sample, bins, t_0 + t * h);
+        if (t > t_aqui) update_radial(locations[t % 2], radial_sample, bins);
 
         if (t % sbs == 0) {
             add_to_sample(locations[t % 2], loc_sample, at);
@@ -264,7 +274,7 @@ int main() {
 
             E_kin_sample[at]  = static_cast<dtype>(N * Temp(velocities[t % 2]));
             cm_vel_sample[at] = static_cast<dtype>(CM_vel(velocities[t % 2]).norm());
-            E_pot_sample[at]  = static_cast<dtype>(V);
+            E_pot_sample[at]  = static_cast<dtype>(V_LJ(locations[0], t_0));
 
             printf((10 * t < steps) ? "%2.1f%%\b\b\b\b" : "%2.1f%%\b\b\b\b\b", static_cast<double>(100 * t / steps));
             at++;
@@ -309,6 +319,7 @@ int main() {
         // Import variables and vectors
         global["L"] = L;
         global["N"] = N;
+        global["T_0"] = T_0;
         global["t_0"] = t_0;
         global["t_max"] = t_max;
         global["t_aqui"] = t_aqui;
