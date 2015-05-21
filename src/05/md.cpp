@@ -12,7 +12,6 @@
 #include <iostream>
 #include <tuple>
 #include <array>
-#include <vector>
 #include <cmath>
 #include <string>
 
@@ -23,40 +22,43 @@ constexpr double L = 8;
 constexpr double cutoff = L / 2;
 constexpr unsigned int N = 16;
 
+constexpr size_t bins = 500;
+
+const double t_aqui = 10;
+
+// Lennard-Jones force
 inline Vector2d F_LJ(const Vector2d &x, double t) {
     double x2i = 1. / x.squaredNorm();
     double x6i = pow(x2i, 3);
     return 48 * x * x2i * x6i * (x6i - 0.5);
 }
 
+// Lennard-Jones potential
 inline double V_LJ(const Vector2d &x, double t) {
     double x6i = 1. / pow(x.squaredNorm(), 3);
     return 4 * x6i * (x6i - 1);
 }
 
-double update_radial_return_V(const std::array<Vector2d, N> &x, std::vector<float> &g, int bins, double t) {
-    double V = 0;
-    static Vector2d r;
-
-    for (size_t i = 0; i < N - 1; ++i) {
-        for (size_t j = i + 1; j < N; ++j) {
-            r = (x[j] - x[i]).unaryExpr([](double xi) { return xi - L * floor(xi / L + 0.5); });
-            if (r.norm() > cutoff) continue;
-            V += V_LJ(r, t);
-            g[size_t(floor(bins * r.norm() * 1. / cutoff))] += 2;
-        }
-    }
-
-    return V;
+// temperature, i.e. kinetical energy / N
+double Temp(const std::array<Vector2d, N> &vel) {
+    double v_squared_mean = 0;
+    for (const Vector2d &v : vel) v_squared_mean += v.squaredNorm();
+    return M / 2 * v_squared_mean / N;
 }
 
+// center of mass velocity
+Vector2d CM_vel(const std::array<Vector2d, N> &vel) {
+    return 1. / N * std::accumulate(vel.begin(), vel.end(), Vector2d(0, 0));
+}
+
+// calculation of all the N force vectors
 std::array<Vector2d, N> calcForces(const std::array<Vector2d, N> &loc, double t) {
     std::array<Vector2d, N> F{{Vector2d(0, 0)}};
     static Vector2d r;
     static Vector2d force;
 
-    for (size_t i = 0; i < N - 1; i++) {
-        for (size_t j = i + 1; j < N; j++) {
+    for (size_t i = 0; i < N - 1; ++i) {
+        for (size_t j = i + 1; j < N; ++j) {
             r = (loc[i] - loc[j]).unaryExpr([](double xi) { return xi - L * floor(xi / L + 0.5); });
             if (r.norm() > cutoff) continue;
             force = F_LJ(r, t);
@@ -68,6 +70,32 @@ std::array<Vector2d, N> calcForces(const std::array<Vector2d, N> &loc, double t)
     return F;
 }
 
+// calculate the potential energy and on-the-go update the given data for radial pair distribution function.
+// As it is only used for sampling where both V and g(r) is updated, it's okay to do both in one step
+double update_radial_return_V(const std::array<Vector2d, N> &x, std::array<float, bins> &g, int bins, double t) {
+    double V = 0;
+    static Vector2d r;
+
+    for (size_t i = 0; i < N - 1; ++i) {
+        for (size_t j = i + 1; j < N; ++j) {
+            r = (x[j] - x[i]).unaryExpr([](double xi) { return xi - L * floor(xi / L + 0.5); });
+            if (r.norm() > cutoff) continue;
+            V += V_LJ(r, t);
+            size_t index = size_t(floor(bins * r.norm() / cutoff));
+            if (index > bins) {
+                std::cerr << "ERROR: index for g is out of range. check computation! EXIT" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            if (t > t_aqui) g[index] += 2;
+        }
+    }
+
+    return V;
+}
+
+// actual verlet step using given locations, velocities and forces from the next step and
+// returning the new values for all N particles. New locations have to be shifted right after
+// they are computed, because the new forces have to be calculated with all particles in the box
 std::tuple<std::array<Vector2d, N>, std::array<Vector2d, N>, std::array<Vector2d, N>>
 Verlet_step(const std::array<Vector2d, N> &loc_0, const std::array<Vector2d, N> &vel_0,
             const std::array<Vector2d, N> &F_0, double t_0, double h) {
@@ -88,16 +116,8 @@ Verlet_step(const std::array<Vector2d, N> &loc_0, const std::array<Vector2d, N> 
     return std::make_tuple(loc_1, vel_1, F_1);
 }
 
-double Temp(const std::array<Vector2d, N> &vel) {
-    double v_squared_mean = 0;
-    for (const Vector2d &v : vel) v_squared_mean += v.squaredNorm();
-    return M / 2 * v_squared_mean / N;
-}
-
-Vector2d CM_vel(const std::array<Vector2d, N> &vel) {
-    return 1. / N * std::accumulate(vel.begin(), vel.end(), Vector2d(0, 0));
-}
-
+// lattice-like initialization with random velocities
+// center of mass velocity is set to 0, temperature is scaled to match given T_0
 std::tuple<std::array<Vector2d, N>, std::array<Vector2d, N>> initialize(double T_0) {
     int ppa = static_cast<int>(sqrt(N));
     double dist = L / (2 * ppa);
@@ -109,9 +129,9 @@ std::tuple<std::array<Vector2d, N>, std::array<Vector2d, N>> initialize(double T
 
     namespace rand = boost::random;
 
-    rand::mt19937 generator;  // Mersenne Twister Generator
+    rand::mt11213b generator;                               // Mersenne Twister Generator
     rand::uniform_real_distribution<> normdist(-1.0, 1.0);  // Distribution
-    rand::variate_generator<rand::mt19937 &, rand::uniform_real_distribution<>> norm_rnd(generator, normdist);
+    rand::variate_generator<rand::mt11213b &, rand::uniform_real_distribution<>> norm_rnd(generator, normdist);
 
     std::array<Vector2d, N> loc, vel;
     Vector2d v_mean(0, 0);
@@ -143,7 +163,7 @@ std::tuple<std::array<Vector2d, N>, std::array<Vector2d, N>> initialize(double T
     return std::make_tuple(loc, vel);
 }
 
-// 
+// function to get a traceback from python in case of an error
 std::string extractPythonException() {
     namespace py = boost::python;
 
@@ -181,11 +201,18 @@ int main() {
     const double h = 0.01;
 
     const double t_0 = 0;
-    const double t_max = 1e4;
+    const double t_max = 1e3;
 
-    const double T_0 = 1;
-
-    const size_t bins = 500;
+    // Init temperature varies from mean temperature after equilibration
+    const double T_0 = 1.000;  // yiedls T_mean = 1.4467
+    // const double T_0 = 0.800;  // yiedls T_mean = 1.2614
+    // const double T_0 = 0.600;  // yiedls T_mean = 1.0957
+    // const double T_0 = 0.500;  // yiedls T_mean = 1.0072
+    // const double T_0 = 0.300;  // yiedls T_mean = 0.8508
+    // const double T_0 = 0.250;  // yiedls T_mean = 0.8183
+    // const double T_0 = 0.001;  // yiedls T_mean = 0.6588
+    // const double T_0 = 1e-05;  // yiedls T_mean = 0.6519
+    // const double T_0 = 1e-10;  // yiedls T_mean = 0.6474
 
     // steps and number of samples
     const size_t samples = 1000;
@@ -204,13 +231,13 @@ int main() {
     std::array<dtype, samples> E_kin_sample;
     std::array<dtype, samples> E_pot_sample;
     std::array<dtype, samples> cm_vel_sample;
-    std::vector<float> radial_sample(bins);
+    std::array<float, bins> radial_sample;
 
     // initialization
     std::array<std::array<Vector2d, N>, 2> locations, velocities, forces;
     std::tie(locations[0], velocities[0]) = initialize(T_0);
     forces[0] = calcForces(locations[0], t_0);
-    for (const Vector2d &f : forces[0]) std::cout << f << std::endl;
+    // for (const Vector2d &f : forces[0]) std::cout << f << std::endl;
 
     // sample init status
     add_to_sample(locations[0], loc_sample, 0);
@@ -229,14 +256,15 @@ int main() {
         std::tie(locations[t % 2], velocities[t % 2], forces[t % 2]) =
             Verlet_step(locations[(t + 1) % 2], velocities[(t + 1) % 2], forces[(t + 1) % 2], t_0 + t * h, h);
 
+        double V = update_radial_return_V(locations[t % 2], radial_sample, bins, t_0 + t * h);
+
         if (t % sbs == 0) {
             add_to_sample(locations[t % 2], loc_sample, at);
             add_to_sample(velocities[t % 2], vel_sample, at);
 
-            E_kin_sample[at] = static_cast<dtype>(N * Temp(velocities[t % 2]));
+            E_kin_sample[at]  = static_cast<dtype>(N * Temp(velocities[t % 2]));
             cm_vel_sample[at] = static_cast<dtype>(CM_vel(velocities[t % 2]).norm());
-            double V = update_radial_return_V(locations[t % 2], radial_sample, bins, t_0 + t * h);
-            E_pot_sample[at] = static_cast<dtype>(V);
+            E_pot_sample[at]  = static_cast<dtype>(V);
 
             printf((10 * t < steps) ? "%2.1f%%\b\b\b\b" : "%2.1f%%\b\b\b\b\b", static_cast<double>(100 * t / steps));
             at++;
@@ -246,7 +274,7 @@ int main() {
     // renormalization of g(r)
     for (size_t i = 0; i < bins; i++) {
         double dV = M_PI * (pow(i + 1, 2.0) - pow(i, 2.0)) * pow(cutoff / bins, 2.0);
-        radial_sample[i] *= static_cast<float>(L * L / (dV * N * N * samples));
+        radial_sample[i] *= static_cast<float>(L * L / (dV * N * N * steps));
     }
 
     printf("%3.1f%%\ndone\n", 100.);
@@ -264,7 +292,8 @@ int main() {
         py::object global(py::import("__main__").attr("__dict__"));
 
         // Import neccessary modules
-        py::exec("print 'Hello from Python!' \n"
+        py::exec("from __future__ import division \n"
+                 "print 'Hello from Python!' \n"
                  "import numpy as np \n"
                  "print 'importing matplotlib...' \n"
                  "from matplotlib import pyplot as plt \n"
@@ -272,22 +301,24 @@ int main() {
                  "plt.switch_backend('AGG') \n"
                  "plt.style.use('ggplot') \n"
                  "print 'done' \n"
-                 "print 'plotting...' \n",
-                 global, global);
+                 "print 'plotting...' \n"
+                 , global, global);
 
         global["file_ext"] = ".png";
 
         // Import variables and vectors
         global["L"] = L;
         global["N"] = N;
+        global["t_0"] = t_0;
         global["t_max"] = t_max;
+        global["t_aqui"] = t_aqui;
         global["sbs"] = sbs;
         global["samples"] = samples;
         global["cutoff"] = cutoff;
         global["bins"] = bins;
 
-        global["velocity_scale"] = 12;
-        global["force_scale"] = 1e-3;
+        // global["velocity_scale"] = 12;
+        // global["force_scale"] = 1e-3;
 
         py::tuple strides_1 =
             static_cast<py::tuple>(py::eval("np.ndarray((samples, N, 2), np.float32).strides", global, global));
