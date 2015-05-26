@@ -1,9 +1,9 @@
 CXX=clang++-3.5
 CXXFLAGS=-O2 -Wall -Werror -Wfatal-errors -pedantic -std=c++11
 CXXFLAGS+=$(shell pkg-config --cflags eigen3 | sed 's/I/isystem/g')
-CXXFLAGS+=-Wno-missing-prototypes -Wno-c++98-compat -Wno-unused-value -Weverything
+CXXFLAGS+=-Wno-missing-prototypes -Wno-c++98-compat -Wno-unused-variable -Weverything
 
-all: plots schroedinger
+all: plots plots2
 
 poisson: poisson.cpp
 	$(CXX) -c $(shell python2.7-config --cflags) $(CXXFLAGS) poisson.cpp 
@@ -15,6 +15,9 @@ schroedinger: schroedinger.cpp
 
 plots: poisson
 	./poisson
+
+plots2: schroedinger
+	./schroedinger
 
 cleanlatex:
 	rm -f *.aux
@@ -30,6 +33,7 @@ clean: cleanlatex
 	rm -f schroedinger.o
 	rm -f *.pdf
 	rm -f *.tar.gz
+	rm -f Welle.gif
 
 pack: all
 	rm -f poisson
