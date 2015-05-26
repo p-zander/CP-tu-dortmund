@@ -6,14 +6,12 @@
 #include <Python.h>
 
 #include <iostream>
-#include <array>
 #include <string>
 
 using Eigen::Matrix;
 using Eigen::MatrixXd;
 
-template <typename T>
-void jacobi_iter_step(Matrix<T, -1, -1> &A, const Matrix<T, -1, -1> &rho, double d_x, double d_y) {
+template <typename T> void jacobi_iter_step(Matrix<T, -1, -1> &A, const Matrix<T, -1, -1> &rho, const double d_l) {
     if (A.cols() != rho.cols() || A.rows() != rho.rows()) {
         std::cerr << "Matrix 'A' and matrix 'rho': Dimension mismatch. EXIT" << std::endl;
         exit(EXIT_FAILURE);
@@ -21,31 +19,53 @@ void jacobi_iter_step(Matrix<T, -1, -1> &A, const Matrix<T, -1, -1> &rho, double
 
     for (int i = 1; i < A.cols() - 1; i++) {
         for (int j = 1; j < A.rows() - 1; j++) {
-            A.row(j).col(i) = 1. / 4 * (A.row(j - 1).col(i) + A.row(j + 1).col(i) + A.row(j).col(i - 1) +
-                                        A.row(j).col(i + 1) + d_x * d_y * rho.row(j).col(i));
+            A(j, i) = 1. / 4 * (A(j - 1, i) + A(j + 1, i) + A(j, i - 1) + A(j, i + 1) + d_l * d_l * rho(j, i));
         }
     }
 }
 
-template <typename T>
-void gauss_seidel_iter_step(Matrix<T, -1, -1> &A, const Matrix<T, -1, -1> &rho, double d_x, double d_y) {
-    if (A.cols() != rho.cols() || A.rows() != rho.rows()) {
-        std::cerr << "Matrix 'A' and matrix 'rho': Dimension mismatch. EXIT" << std::endl;
-        exit(EXIT_FAILURE);
+// faulty function
+// template <typename T>
+// void gauss_seidel_iter_step(Matrix<T, -1, -1> &A, const Matrix<T, -1, -1> &rho, const double d_l) {
+//     if (A.cols() != rho.cols() || A.rows() != rho.rows()) {
+//         std::cerr << "Matrix 'A' and matrix 'rho': Dimension mismatch. EXIT" << std::endl;
+//         exit(EXIT_FAILURE);
+//     }
+
+//     for (int i = 1; i < A.cols() - 2; i += 2) {
+//         for (int j = 1; j < A.rows() - 2; j += 2) {
+//             A(j, i) = 1. / 4 * (A(j - 1, i) + A(j + 1, i) + A(j, i - 1) + A.row(j).col(i + 1) + d_l * d_l * rho(j,
+//             i));
+//         }
+//     }
+//     for (int i = 2; i < A.cols() - 1; i += 2) {
+//         for (int j = 2; j < A.rows() - 1; j += 2) {
+//             A(j, i) = 1. / 4 * (A(j - 1, i) + A(j + 1, i) + A(j, i - 1) + A(j, i + 1) + d_l * d_l * rho(j, i));
+//         }
+//     }
+// }
+
+template <typename T, class iter_step_F>
+void do_some_iteration(Matrix<T, -1, -1> &A, const iter_step_F &iter_step, const int start = 10, int step = 5,
+                       const double eps = 1e-5) {
+    Matrix<T, -1, -1> copy_A(A.cols(), A.rows());
+    Matrix<T, -1, -1> EPS(A.cols(), A.rows());
+
+    EPS = eps * Matrix<T, -1, -1>::Ones(A.cols(), A.rows());
+
+    for (int i = 0; i < start - 1; i++) iter_step(A);
+    copy_A = A;
+    iter_step(A);
+
+    int N = start;
+    while (((A - copy_A).cwiseAbs().array() > EPS.array()).any()) {
+        N += step;
+        for (int i = 0; i < step - 1; i++) iter_step(A);
+        copy_A = A;
+        iter_step(A);
     }
 
-    for (int i = 1; i < A.cols() - 2; i += 2) {
-        for (int j = 1; j < A.rows() - 2; j += 2) {
-            A.row(j).col(i) = 1. / 4 * (A.row(j - 1).col(i) + A.row(j + 1).col(i) + A.row(j).col(i - 1) +
-                                        A.row(j).col(i + 1) + d_x * d_y * rho.row(j).col(i));
-        }
-    }
-    for (int i = 2; i < A.cols() - 1; i += 2) {
-        for (int j = 2; j < A.rows() - 1; j += 2) {
-            A.row(j).col(i) = 1. / 4 * (A.row(j - 1).col(i) + A.row(j + 1).col(i) + A.row(j).col(i - 1) +
-                                        A.row(j).col(i + 1) + d_x * d_y * rho.row(j).col(i));
-        }
-    }
+    std::cout << "Steps needed: " << N << std::endl;
 }
 
 // function to get a traceback from python in case of an error
@@ -67,6 +87,7 @@ std::string extractPythonException() {
         return py::extract<std::string>(formatted);
     }
 }
+
 template <typename T>
 void init_a(Matrix<T, -1, -1> &__attribute__((unused)), Matrix<T, -1, -1> &__attribute__((unused))) {}
 
@@ -75,46 +96,31 @@ template <typename T> void init_b(Matrix<T, -1, -1> &A, Matrix<T, -1, -1> &__att
 }
 
 template <typename T> void init_c(Matrix<T, -1, -1> &__attribute__((unused)), Matrix<T, -1, -1> &rho) {
-    rho.col(static_cast<int>(rho.rows() * 1. / 2)).row(static_cast<int>(rho.cols() * 1. / 3)) =
-        Matrix<T, -1, -1>::Ones(1, 1);
+    rho.col(rho.rows() / 2).row(rho.cols() / 3) = Matrix<T, -1, -1>::Ones(1, 1);
 }
 
-template <typename T> void init_e_1(Matrix<T, -1, -1> &__attribute__((unused)), Matrix<T, -1, -1> &rho) {
-    rho.col(static_cast<int>(rho.rows() * 1. / 3)).row(static_cast<int>(rho.cols() * 2. / 3)) +=
-        Matrix<T, -1, -1>::Ones(1, 1);
-    rho.col(static_cast<int>(rho.rows() * 2. / 3)).row(static_cast<int>(rho.cols() * 1. / 3)) -=
-        Matrix<T, -1, -1>::Ones(1, 1);
-}
-
-template <typename T> void init_e_2(Matrix<T, -1, -1> &__attribute__((unused)), Matrix<T, -1, -1> &rho) {
-    rho.col(static_cast<int>(rho.rows() * 1. / 3)).row(static_cast<int>(rho.cols() * 2. / 3)) +=
-        Matrix<T, -1, -1>::Ones(1, 1);
-    rho.col(static_cast<int>(rho.rows() * 2. / 3)).row(static_cast<int>(rho.cols() * 1. / 3)) +=
-        Matrix<T, -1, -1>::Ones(1, 1);
-    rho.col(static_cast<int>(rho.rows() * 2. / 3)).row(static_cast<int>(rho.cols() * 2. / 3)) -=
-        Matrix<T, -1, -1>::Ones(1, 1);
-    rho.col(static_cast<int>(rho.rows() * 1. / 3)).row(static_cast<int>(rho.cols() * 1. / 3)) -=
-        Matrix<T, -1, -1>::Ones(1, 1);
+// suits the assignment only with even N
+template <typename T> void init_e_n(Matrix<T, -1, -1> &__attribute__((unused)), Matrix<T, -1, -1> &rho, int N) {
+    for (int i = 1; i <= N; i++)
+        for (int j = 1; j <= N; j++) {
+            int charge = (i % 2) ? -1 : 1;
+            charge *= (j % 2) ? -1 : 1;
+            rho((rho.rows() * i / (N + 1)), (rho.cols() * j / (N + 1))) = charge;
+        }
 }
 
 int main() {
-    const double L_x(1);
-    const double L_y(1);
-    const double d_x(0.05), d_y(0.05);
+    const double L(1);
+    const double d_l(0.05);
 
-    const unsigned int N_x(static_cast<unsigned int>(L_x / d_x));
-    const unsigned int N_y(static_cast<unsigned int>(L_y / d_y));
+    const unsigned int N(static_cast<unsigned int>(L / d_l + 0.5));
 
-    MatrixXd A(N_y, N_x);
-    MatrixXd rho(N_y, N_x);
+    MatrixXd A(N, N);
+    MatrixXd rho(N, N);
 
-    init_e_2(A, rho);
+    init_e_n(A, rho, 3);
 
-    for (int i = 0; i < 100; i++) {
-        jacobi_iter_step(A, rho, d_x, d_y);
-    }
-
-    // std::cout << A << std::endl;
+    do_some_iteration(A, [&rho, d_l](MatrixXd &B) { jacobi_iter_step(B, rho, d_l); });
 
     //––– plotting with python ––––––––––––––––––––––––––––––––––––––––––––––––
     namespace py = boost::python;
@@ -130,35 +136,21 @@ int main() {
         // Import neccessary modules
         py::exec("from __future__ import division \n"
                  "print 'Hello from Python!' \n"
-                 "import numpy as np \n"
-                 "print 'importing matplotlib...' \n"
-                 "from matplotlib import pyplot as plt \n"
-                 // "plt.switch_backend('AGG') \n"
-                 "plt.style.use('ggplot') \n"
-                 "print 'done' \n"
-                 "print 'plotting...' \n",
+                 "import numpy as np \n",
                  global, global);
 
-        global["file_ext"] = ".pdf";
-
         // Import variables and vectors
-        global["L_x"] = L_x;
-        global["L_y"] = L_y;
-        global["N_x"] = N_x;
-        global["N_y"] = N_y;
+        global["L"] = L;
+        global["N"] = N;
 
         py::tuple strides_A =
-            static_cast<py::tuple>(py::eval("np.ndarray((N_y, N_x), np.float64).strides", global, global));
+            static_cast<py::tuple>(py::eval("np.ndarray((N, N), np.float64).strides", global, global));
+        np::dtype dtype = np::dtype::get_builtin<double>();
 
-        global["A"] = np::from_data(A.data(), np::dtype::get_builtin<double>(), py::make_tuple(N_y, N_x), strides_A,
-                                    py::object());
-        // global["b"] = np::from_data(E_kin_sample.data(), np::dtype::get_builtin<dtype>(),
-        // py::make_tuple(samples), py::make_tuple(sizeof(dtype)), py::object());
-
-        py::exec("plt.imshow(A) \nplt.savefig('A.pdf')", global, global);
+        global["A"] = np::from_data(A.data(), dtype, py::make_tuple(N, N), strides_A, py::object());
 
         // Launch some function in Python
-        // py::exec_file("plots.py", global, global);
+        py::exec_file("plots.py", global, global);
     } catch (const py::error_already_set &) {
         std::cout << extractPythonException() << std::endl;
         exit(EXIT_FAILURE);
