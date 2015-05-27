@@ -14,7 +14,7 @@
 
 using cd = std::complex<double>;
 using VecXcd = Eigen::VectorXcd;
-
+using matXcd = Eigen::MatrixXcd;
 // function to get a traceback from python in case of an error
 std::string extractPythonException() {
     namespace py = boost::python;
@@ -36,55 +36,43 @@ std::string extractPythonException() {
 }
 
 int main() {
-    const double L {10};  // computation window is [-L, +L] in both directions
-    const double d_l {.1};
-    const double d_t {0.02};
-    const double xi0 {1};
-    const double si {1};
-    const size_t t {500};
+  const double L{10};  // computation window is [-L, +L] in both directions
+  const double d_l{.1};
+  const double d_t{0.02};
+  const double xi0{1};
+  const double si{1};
+  const size_t t{500};
 
-    const int N(1+static_cast<int>(2 * L / d_l + 0.5));
-    
-    Eigen::SparseMatrix<cd> H(N, N);
-    Eigen::MatrixXcd S_p(N, N), S_n(N, N);
-    VecXcd psi0(N);
-    
-    psi0 = Eigen::VectorXd::LinSpaced(N,-L,L).unaryExpr([xi0,si](double xi){return exp( -pow(xi-xi0,2) / (4*si) );}).cast<cd>().normalized();
+  const int N(1 + static_cast<int>(2 * L / d_l + 0.5));
 
-    H.reserve(3 * N - 2);
+  matXcd H = matXcd::Identity(N, N) * 2;
 
-    for (int i = 0; i < N; i++) {
-        H.insert(i, i) = 2. / (d_l * d_l) + d_l * d_l * i * i;
+  H.topRightCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
+  H.bottomLeftCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
+  H *= -1. / pow(d_l, 2);
+  H += pow(d_l,2) * Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cast<cd>().asDiagonal();
+  matXcd S_p = matXcd::Identity(N, N) + std::complex<double>(0, 1) * 0.5 * d_t * H;
+  matXcd S_n = matXcd::Identity(N, N) - std::complex<double>(0, 1) * 0.5 * d_t * H;
+  matXcd S = S_p.inverse() * S_n;
 
-        S_p(i, i) = cd(1 + H.coeffRef(i, i).imag(), 0.5 * d_t * H.coeffRef(i, i).real());
-        S_n(i, i) = cd(1 + H.coeffRef(i, i).imag(), -0.5 * d_t * H.coeffRef(i, i).real());
+  VecXcd psi0 = Eigen::VectorXd::LinSpaced(N, -L, L)
+                    .unaryExpr([xi0, si](double xi) {
+                      return exp(-pow(xi - xi0, 2) / (4 * si));
+                    })
+                    .cast<cd>()
+                    .normalized();
+
+  std::vector<VecXcd> psi(t, VecXcd(N));
+  psi[0] = psi0;
+
+  for (std::vector<VecXcd>::iterator it = psi.begin() + 1; it != psi.end();++it) *it = S * *(it - 1);
+
+  boost::multi_array<float, 2> psi2(boost::extents[N][t]);
+  for (long i = 0; i < N; i++) {
+    for (long j = 0; j < static_cast<long>(t); j++) {
+      psi2[i][j] = static_cast<float>(norm(psi[static_cast<size_t>(j)][i]));
     }
-    for (int i = 0; i < N - 1; i++) {
-        H.insert(i + 1, i) = -1. / (d_l * d_l);
-        H.insert(i, i + 1) = -1. / (d_l * d_l);
-
-        S_p(i + 1, i) = cd(1 + H.coeffRef(i + 1, i).imag(), 0.5 * d_t * H.coeffRef(i + 1, i).real());
-        S_p(i, i + 1) = cd(1 + H.coeffRef(i, i + 1).imag(), 0.5 * d_t * H.coeffRef(i, i + 1).real());
-        S_n(i + 1, i) = cd(1 + H.coeffRef(i + 1, i).imag(), -0.5 * d_t * H.coeffRef(i + 1, i).real());
-        S_n(i, i + 1) = cd(1 + H.coeffRef(i, i + 1).imag(), -0.5 * d_t * H.coeffRef(i, i + 1).real());
-    }
-
-    Eigen::MatrixXcd S = S_p.inverse() * S_n;
-
-
-    std::vector<VecXcd> psi(t,VecXcd(N));
-    psi[0] = psi0;
-    for (std::vector<VecXcd>::iterator it = psi.begin() + 1; it != psi.end(); ++it)
-    {
-        *it = S * *(it-1);
-    }
-
-    boost::multi_array<float, 2> psim(boost::extents[N][t]);
-    for (long i = 0; i < N; i++) {
-      for (long j = 0; j < static_cast<long>(t); j++) {
-        psim[i][j] = static_cast<float>(norm(psi[static_cast<size_t>(j)][i]));
-      }
-    }
+  }
 
     //––– plotting with python ––––––––––––––––––––––––––––––––––––––––––––––––
     namespace py = boost::python;
@@ -112,8 +100,8 @@ int main() {
         py::tuple strides_1 = static_cast<py::tuple>(py::eval(
             "np.ndarray((N, t), np.float32).strides", global, global));
 
-        global["psim"] = np::from_data(
-            psim.data(), np::dtype::get_builtin<float>(),
+        global["psi2"] = np::from_data(
+            psi2.data(), np::dtype::get_builtin<float>(),
             py::make_tuple(N, t), strides_1, py::object());
 
         // Launch some function in Python
