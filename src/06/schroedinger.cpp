@@ -45,14 +45,18 @@ int main() {
 
   const int N(1 + static_cast<int>(2 * L / d_l + 0.5));
 
-  matXcd H = matXcd::Identity(N, N) * 2;
+  matXcd H = matXcd::Identity(N, N) * - 2;
 
   H.topRightCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
   H.bottomLeftCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
   H *= -1. / pow(d_l, 2);
   H += pow(d_l,2) * Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cast<cd>().asDiagonal();
-  matXcd S_p = matXcd::Identity(N, N) + std::complex<double>(0, 1) * 0.5 * d_t * H;
-  matXcd S_n = matXcd::Identity(N, N) - std::complex<double>(0, 1) * 0.5 * d_t * H;
+  // Anharmonizität
+  // H += 1000 * pow(d_l,4) * Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cwiseAbs2().cast<cd>().asDiagonal();
+
+  matXcd S_p = matXcd::Identity(N, N) + cd(0, 1) * 0.5 * d_t * H;
+  // std::cout << S_p << std::endl;
+  matXcd S_n = matXcd::Identity(N, N) - cd(0, 1) * 0.5 * d_t * H;
   matXcd S = S_p.inverse() * S_n;
 
   VecXcd psi0 = Eigen::VectorXd::LinSpaced(N, -L, L)
