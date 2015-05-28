@@ -50,7 +50,8 @@ int main() {
   H.topRightCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
   H.bottomLeftCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
   H *= -1. / pow(d_l, 2);
-  H += pow(d_l,2) * Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cast<cd>().asDiagonal();
+  // Factor pow(d_l,2) is mentioned in assignment but yields to wrong results...
+  H += Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cast<cd>().asDiagonal(); 
   // Anharmonizität
   // H += 1000 * pow(d_l,4) * Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cwiseAbs2().cast<cd>().asDiagonal();
 
@@ -74,9 +75,19 @@ int main() {
   boost::multi_array<float, 2> psi2(boost::extents[N][t]);
   for (long i = 0; i < N; i++) {
     for (long j = 0; j < static_cast<long>(t); j++) {
-      psi2[i][j] = static_cast<float>(norm(psi[static_cast<size_t>(j)][i]));
+      psi2[i][j] = static_cast<float>(norm(psi[static_cast<size_t>(j)][i])/d_l);
     }
   }
+
+  //   for (size_t i = 0; i < t; i++) {
+  //       const auto re = psi[i].real();
+  //       const auto im = psi[i].imag();
+  //       const auto prob = (re.cwiseProduct(re) + im.cwiseProduct(im) ) / d_l;
+  //   for (long j = 0; j < N; j++) {
+  //     psi2[j][static_cast<long>(i)] = static_cast<float>(prob[j]);
+  //   }
+  // }
+
 
     //––– plotting with python ––––––––––––––––––––––––––––––––––––––––––––––––
     namespace py = boost::python;
@@ -98,8 +109,8 @@ int main() {
         // Import variables and vectors
         global["N"] = N;
         global["t"] = t;
-        // global["N_x"] = N_x;
-        // global["N_y"] = N_y;
+        global["d_l"] = d_l;
+        global["d_t"] = d_t;
 
         py::tuple strides_1 = static_cast<py::tuple>(py::eval(
             "np.ndarray((N, t), np.float32).strides", global, global));
