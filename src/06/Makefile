@@ -39,13 +39,13 @@ clean: cleanlatex
 	rm -f schroedinger.o
 	rm -f *.pdf
 	rm -f *.tar.gz
-	rm -f Welle.gif
+	rm -f 1_Welle.gif
 
 pack: all
 	rm -f poisson
 	rm -f poisson.o
 	rm -f schroedinger
 	rm -f schroedinger.o
-	tar -czf abgabe5.tar.gz *
+	tar -czf abgabe6.tar.gz *
 
 .PHONY: all clean cleanlatex pack 1_plots 2_plots
