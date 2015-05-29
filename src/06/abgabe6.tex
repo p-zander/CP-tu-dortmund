@@ -1,0 +1,60 @@
+\documentclass[paper=a4, ngerman]{scrartcl}
+\usepackage[utf8]{luainputenc}
+\usepackage{amsmath} 
+\usepackage{amssymb}
+
+\begin{document}
+
+\section{Analytische Lösung}
+Löse 
+\begin{align}
+\partial _x^2 \phi +\partial \phi_y^2 = 0 
+\end{align}
+mit Produktansatz:
+\begin{align}
+\phi (x,y) = \phi(x)\phi(y)
+\end{align}
+Randbedingungen:
+\begin{align}
+\phi_x(0) = 0, \phi_x(L) = 0, \phi_y(0) = 0, \phi_y(L) = 1
+\end{align}
+Nach Randbedingung gilt:
+\begin{align}
+\phi_x = \sin\left(\sqrt{\lambda} x \right) \hspace{.5cm}\text{mit}\hspace{.5cm} \lambda = \left( \frac{n \pi}{L} \right)^2
+\end{align}
+\begin{align}
+\phi_y = C_1 \sinh\left( \frac{n \pi}{L}y \right) + C_2 \cosh \left( \frac{n \pi}{L}y \right) 
+\end{align}
+\begin{align}
+\phi_y(0) = 0 => C_2 = 0 => 
+\end{align}
+\begin{align}
+\phi_y = C_1 \sinh\left( \frac{n \pi}{L}y \right) 
+\end{align}
+\begin{align}
+\phi_y(1) = C_1 \sinh\left( n \pi \right) = 1
+\end{align}
+\begin{align}
+\phi_n (x,y) = C_n \sinh\left(\frac{n \pi}{L} y \right) \sin\left( \frac{n \pi}{L} x \right) 
+\end{align}
+\begin{align}
+\phi(x,y) = \sum _{n = 1}^{\infty} C_n \sinh\left(\frac{n \pi}{L} y \right) \sin\left( \frac{n \pi}{L} x \right) = 1
+\end{align}
+\begin{align}
+ \sum _{n = 1}^{\infty} \int _0^L C_n \sinh\left(\frac{n \pi}{L} y \right) \sin\left( \frac{n \pi}{L} x \right) \text{sin} \left( \frac{m \pi}{L} x \right) dx = \int _0^L \sin \left( \frac{m \pi}{L} x \right) dx
+\end{align}
+\begin{align}
+\int _0^L C_m \sinh (m \pi) \sin^2 \left( \frac{m \pi}{L} x \right) dx = 
+\int_0^L \sin \left( \frac{m \pi}{L} x \right) dx
+\end{align}
+\begin{align}
+\frac{1}{2} C_m \sinh (m \pi) = \frac{1 - \cos(m \pi)}{\pi m} 
+\end{align}
+\begin{align}
+C_m = \frac{2(1-\cos(\pi m))}{\pi m \sinh(m \pi)} 
+\end{align}
+\begin{align}
+\phi_n (x,y) = \sum_{n=1} ^\infty \frac{2(1- \cos(\pi n))}{n \pi \sinh(n \pi)} \sinh(n \pi y) \sin (n \pi x)
+\end{align}
+
+\end{document}

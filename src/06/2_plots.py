@@ -22,13 +22,16 @@ plt.plot(np.abs(np.arctan2(dx[0, :], dy[0, :])), label=u'at $x = 0$')
 plt.plot(np.abs(np.arctan2(dx[:, -1], dy[:, -1])), label=u'at $y = 1$')
 plt.plot(np.abs(np.arctan2(dx[-1, :], dy[-1, :])), label=u'at $x = 1$')
 
+charge = sum(dx[0, :]) + sum(dx[-1, :]) + sum(dy[:, 0]) + sum(dy[:, -1])
+
 print 'Charge along x=0 axis: ', sum(dx[0, :])
 print 'Charge along x=1 axis: ', sum(dx[-1, :])
 print 'Charge along y=0 axis: ', sum(dy[:, 0])
 print 'Charge along y=1 axis: ', sum(dy[:, -1])
+print 'Charge along all axes: ', charge
 
 plt.legend(loc='best')
-plt.savefig('angles.pdf')
+plt.savefig('2_' + part + '_angles.pdf')
 
 # –– plot potential and field –––––––––––––––––––––––––––––––––––––––––––––––––
 fig = plt.figure(figsize=[8, 8])
@@ -42,4 +45,4 @@ ax = fig.gca()
 ax.imshow(A.T, cmap='seismic')
 ax.quiver(points[:, 0], points[:, 1], -dx, -dy, angles='xy', pivot='middle')
 
-fig.savefig('A.pdf')
+plt.savefig('2_' + part + '_field.pdf')

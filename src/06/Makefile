@@ -3,21 +3,27 @@ CXXFLAGS=-O2 -Wall -Werror -Wfatal-errors -pedantic -std=c++11
 CXXFLAGS+=$(shell pkg-config --cflags eigen3 | sed 's/I/isystem/g')
 CXXFLAGS+=-Wno-missing-prototypes -Wno-c++98-compat -Wno-unused-variable -Weverything
 
-all: plots plots2
+all: 1_plots 2_plots abgabe6.pdf
 
 poisson: poisson.cpp
 	$(CXX) -c $(shell python2.7-config --cflags) $(CXXFLAGS) poisson.cpp 
-	$(CXX) poisson.o $(shell python2.7-config --ldflags) -lboost_python -lboost_numpy $(CXXFLAGS) -o poisson
+	$(CXX) poisson.o $(shell python2.7-config --ldflags) -lboost_python -lboost_numpy -o poisson
 
 schroedinger: schroedinger.cpp
 	$(CXX) -c $(shell python2.7-config --cflags) $(CXXFLAGS) schroedinger.cpp 
-	$(CXX) schroedinger.o $(shell python2.7-config --ldflags) -lboost_python -lboost_numpy $(CXXFLAGS) -o schroedinger
+	$(CXX) schroedinger.o $(shell python2.7-config --ldflags) -lboost_python -lboost_numpy -o schroedinger
 
-plots: poisson
-	./poisson
+2_plots: poisson
+	./poisson b
+	./poisson c
+	./poisson e 2
 
-plots2: schroedinger
+1_plots: schroedinger
 	./schroedinger
+
+abgabe6.pdf: abgabe6.tex
+	latexmk -lualatex -f -silent abgabe6.tex
+	$(MAKE) cleanlatex
 
 cleanlatex:
 	rm -f *.aux
@@ -42,4 +48,4 @@ pack: all
 	rm -f schroedinger.o
 	tar -czf abgabe5.tar.gz *
 
-.PHONY: all clean cleanlatex pack plots
+.PHONY: all clean cleanlatex pack 1_plots 2_plots

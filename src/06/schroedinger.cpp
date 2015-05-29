@@ -36,48 +36,45 @@ std::string extractPythonException() {
 }
 
 int main() {
-  const double L{10};  // computation window is [-L, +L] in both directions
-  const double d_l{.1};
-  const double d_t{0.02};
-  const double xi0{1};
-  const double si{1};
-  const size_t t{500};
+    const double L{10};  // computation window is [-L, +L] in both directions
+    const double d_l{.1};
+    const double d_t{0.02};
+    const double xi0{1};
+    const double si{1};
+    const size_t t{500};
 
-  const int N(1 + static_cast<int>(2 * L / d_l + 0.5));
+    const int N(1 + static_cast<int>(2 * L / d_l + 0.5));
 
-  matXcd H = matXcd::Identity(N, N) * - 2;
+    matXcd H = matXcd::Identity(N, N) * -2;
 
-  H.topRightCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
-  H.bottomLeftCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
-  H *= -1. / pow(d_l, 2);
-  H += Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cast<cd>().asDiagonal(); 
+    H.topRightCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
+    H.bottomLeftCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
+    H *= -1. / pow(d_l, 2);
+    H += Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cast<cd>().asDiagonal();
 
-  // Anharmonizität
-  // H += 1e-4 * Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cwiseAbs2().cast<cd>().asDiagonal();
+    // Anharmonizität
+    // H += 1e-4 * Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cwiseAbs2().cast<cd>().asDiagonal();
 
-  matXcd S_p = matXcd::Identity(N, N) + cd(0, 1) * 0.5 * d_t * H;
-  // std::cout << S_p << std::endl;
-  matXcd S_n = matXcd::Identity(N, N) - cd(0, 1) * 0.5 * d_t * H;
-  matXcd S = S_p.inverse() * S_n;
+    matXcd S_p = matXcd::Identity(N, N) + cd(0, 1) * 0.5 * d_t * H;
+    matXcd S_n = matXcd::Identity(N, N) - cd(0, 1) * 0.5 * d_t * H;
+    matXcd S = S_p.inverse() * S_n;
 
-  VecXcd psi0 = Eigen::VectorXd::LinSpaced(N, -L, L)
-                    .unaryExpr([xi0, si](double xi) {
-                      return exp(-pow(xi - xi0, 2) / (4 * si));
-                    })
-                    .cast<cd>()
-                    .normalized();
+    VecXcd psi0 = Eigen::VectorXd::LinSpaced(N, -L, L)
+                      .unaryExpr([xi0, si](double xi) { return exp(-pow(xi - xi0, 2) / (4 * si)); })
+                      .cast<cd>()
+                      .normalized();
 
-  std::vector<VecXcd> psi(t, VecXcd(N));
-  psi[0] = psi0;
+    std::vector<VecXcd> psi(t, VecXcd(N));
+    psi[0] = psi0;
 
-  for (std::vector<VecXcd>::iterator it = psi.begin() + 1; it != psi.end();++it) *it = S * *(it - 1);
+    for (auto it = psi.begin() + 1; it != psi.end(); ++it) *it = S * *(it - 1);
 
-  boost::multi_array<float, 2> psi2(boost::extents[N][t]);
-  for (long i = 0; i < N; i++) {
-    for (long j = 0; j < static_cast<long>(t); j++) {
-      psi2[i][j] = static_cast<float>(norm(psi[static_cast<size_t>(j)][i])/d_l);
+    boost::multi_array<float, 2> psi2(boost::extents[N][t]);
+    for (long i = 0; i < N; i++) {
+        for (long j = 0; j < static_cast<long>(t); j++) {
+            psi2[i][j] = static_cast<float>(norm(psi[static_cast<size_t>(j)][i]) / d_l);
+        }
     }
-  }
 
     //––– plotting with python ––––––––––––––––––––––––––––––––––––––––––––––––
     namespace py = boost::python;
@@ -102,15 +99,14 @@ int main() {
         global["d_l"] = d_l;
         global["d_t"] = d_t;
 
-        py::tuple strides_1 = static_cast<py::tuple>(py::eval(
-            "np.ndarray((N, t), np.float32).strides", global, global));
+        py::tuple strides_1 =
+            static_cast<py::tuple>(py::eval("np.ndarray((N, t), np.float32).strides", global, global));
 
-        global["psi2"] = np::from_data(
-            psi2.data(), np::dtype::get_builtin<float>(),
-            py::make_tuple(N, t), strides_1, py::object());
+        global["psi2"] =
+            np::from_data(psi2.data(), np::dtype::get_builtin<float>(), py::make_tuple(N, t), strides_1, py::object());
 
         // Launch some function in Python
-        py::exec_file("plots2.py", global, global);
+        py::exec_file("1_plots.py", global, global);
     } catch (const py::error_already_set &) {
         std::cout << extractPythonException() << std::endl;
         exit(EXIT_FAILURE);

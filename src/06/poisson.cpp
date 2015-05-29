@@ -60,6 +60,7 @@ void do_some_iteration(Matrix<T, -1, -1> &A, const iter_step_F &iter_step, const
     int N = start;
     while (((A - copy_A).cwiseAbs().array() > EPS.array()).any()) {
         N += step;
+
         for (int i = 0; i < step - 1; i++) iter_step(A);
         copy_A = A;
         iter_step(A);
@@ -96,20 +97,27 @@ template <typename T> void init_b(Matrix<T, -1, -1> &A, Matrix<T, -1, -1> &__att
 }
 
 template <typename T> void init_c(Matrix<T, -1, -1> &__attribute__((unused)), Matrix<T, -1, -1> &rho) {
-    rho.col(rho.rows() / 2).row(rho.cols() / 3) = Matrix<T, -1, -1>::Ones(1, 1);
+    rho(rho.rows() / 2, rho.cols() / 2) = 1;
 }
 
 // suits the assignment only with even N
-template <typename T> void init_e_n(Matrix<T, -1, -1> &__attribute__((unused)), Matrix<T, -1, -1> &rho, int N) {
-    for (int i = 1; i <= N; i++)
+template <typename T> void init_e(Matrix<T, -1, -1> &__attribute__((unused)), Matrix<T, -1, -1> &rho, int N) {
+    if (N % 2 != 0) {
+        std::cerr << "init_e: integer N should be an even number. EXIT" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 1; i <= N; i++) {
         for (int j = 1; j <= N; j++) {
             int charge = (i % 2) ? -1 : 1;
             charge *= (j % 2) ? -1 : 1;
+
             rho((rho.rows() * i / (N + 1)), (rho.cols() * j / (N + 1))) = charge;
         }
+    }
 }
 
-int main() {
+int main(int argc, char const *argv[]) {
     const double L(1);
     const double d_l(0.05);
 
@@ -118,7 +126,22 @@ int main() {
     MatrixXd A(N, N);
     MatrixXd rho(N, N);
 
-    init_e_n(A, rho, 3);
+    std::string part(argv[1]);
+
+    if (argc > 1 && part == "b") {
+        init_b(A, rho);
+    } else {
+        if (argc > 1 && part == "c") {
+            init_c(A, rho);
+        } else {
+            if (argc > 2 && part == "e") {
+                init_e(A, rho, std::stoi(std::string(argv[2])));
+            } else {
+                std::cerr << "input: 'b', 'c' or 'e N' where N is an even integer. EXIT" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
 
     do_some_iteration(A, [&rho, d_l](MatrixXd &B) { jacobi_iter_step(B, rho, d_l); });
 
@@ -140,6 +163,7 @@ int main() {
                  global, global);
 
         // Import variables and vectors
+        global["part"] = part;
         global["L"] = L;
         global["N"] = N;
 
@@ -150,7 +174,7 @@ int main() {
         global["A"] = np::from_data(A.data(), dtype, py::make_tuple(N, N), strides_A, py::object());
 
         // Launch some function in Python
-        py::exec_file("plots.py", global, global);
+        py::exec_file("2_plots.py", global, global);
     } catch (const py::error_already_set &) {
         std::cout << extractPythonException() << std::endl;
         exit(EXIT_FAILURE);
