@@ -50,10 +50,10 @@ int main() {
   H.topRightCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
   H.bottomLeftCorner(N - 1, N - 1) += matXcd::Identity(N - 1, N - 1);
   H *= -1. / pow(d_l, 2);
-  // Factor pow(d_l,2) is mentioned in assignment but yields to wrong results...
   H += Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cast<cd>().asDiagonal(); 
+
   // Anharmonizität
-  // H += 1000 * pow(d_l,4) * Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cwiseAbs2().cast<cd>().asDiagonal();
+  // H += 1e-4 * Eigen::VectorXd::LinSpaced(N, -L, L).cwiseAbs2().cwiseAbs2().cast<cd>().asDiagonal();
 
   matXcd S_p = matXcd::Identity(N, N) + cd(0, 1) * 0.5 * d_t * H;
   // std::cout << S_p << std::endl;
@@ -78,16 +78,6 @@ int main() {
       psi2[i][j] = static_cast<float>(norm(psi[static_cast<size_t>(j)][i])/d_l);
     }
   }
-
-  //   for (size_t i = 0; i < t; i++) {
-  //       const auto re = psi[i].real();
-  //       const auto im = psi[i].imag();
-  //       const auto prob = (re.cwiseProduct(re) + im.cwiseProduct(im) ) / d_l;
-  //   for (long j = 0; j < N; j++) {
-  //     psi2[j][static_cast<long>(i)] = static_cast<float>(prob[j]);
-  //   }
-  // }
-
 
     //––– plotting with python ––––––––––––––––––––––––––––––––––––––––––––––––
     namespace py = boost::python;

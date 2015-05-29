@@ -24,7 +24,7 @@ ani.save("Welle.gif", writer='imagemagick', fps=30)
 
 norm = d_l * np.sum(psi2, axis=0)
 mean = d_l * np.sum( (np.linspace(-10, 10, N)*psi2.T).T , axis=0)
-var  = d_l * np.sum( (np.linspace(-10, 10, N)**2 * psi2.T).T , axis=0) - mean
+var  = d_l * np.sum( (np.linspace(-10, 10, N)**2 * psi2.T).T , axis=0) - mean**2
 
 plt.figure()
 plt.plot(np.linspace(-10, 10, N), psi2[:, 0], 'b-', label=r'$\vert\psi_n(t=0)\vert^2$')
@@ -34,17 +34,13 @@ plt.savefig("t0_10.pdf")
 
 plt.figure()
 plt.plot(np.linspace(0, t*d_t, t), norm, label=r'$\Sigma_n(\Delta\xi)\vert\psi_n(t)\vert^2$')
-plt.ylim(0.9999,1.0001)
+# plt.ylim(0.999,1.001)
 plt.legend()
 plt.savefig("norm.pdf")
 
 plt.figure()
+plt.plot(np.linspace(0, t*d_t, t), mean, label=r'$\langle\xi\rangle(t) = \Sigma_n(\Delta\xi)\xi_n\vert\psi_n(t)\vert^2$')
 plt.plot(np.linspace(0, t*d_t, t), var, label=r'$\langle\xi^2\rangle(t) - \langle\xi\rangle^2(t)$')
-# plt.ylim(0.9,1.1)
-plt.legend()
-plt.savefig("var.pdf")
-
-plt.figure()
-plt.plot(np.linspace(0, t*d_t, t), mean, label=r'$\Sigma_n(\Delta\xi)\xi_n\vert\psi_n(t)\vert^2$')
-plt.legend()
-plt.savefig("mean.pdf")
+plt.ylim(-1.2,1.7)
+plt.legend(loc=0)
+plt.savefig("mean_var.pdf")
