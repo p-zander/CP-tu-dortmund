@@ -14,8 +14,9 @@ feigenbaum: feigenbaum.cpp
 	$(CXX) -c $(CXXFLAGS) feigenbaum.cpp 
 	$(CXX) feigenbaum.o $(LDFLAGS) -o feigenbaum
 
-plots: plots.py bifurk
+plots: plots.py bifurk feigenbaum
 	./bifurk
+	./feigenbaum > 2_nullstellen.txt
 
 cleanlatex:
 	rm -f *.aux
@@ -30,6 +31,7 @@ clean: cleanlatex
 	rm -f feigenbaum
 	rm -f feigenbaum.o
 	rm -f *.pdf
+	rm -f *.txt
 	rm -f *.tar.gz
 
 pack: all
