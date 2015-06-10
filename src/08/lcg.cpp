@@ -1,5 +1,4 @@
 #include <fstream>
-#include <iostream>
 
 int main()
 {
@@ -17,9 +16,9 @@ int main()
 
 	std::ofstream file("lcg.txt");
 	file << "#lcg1\tlcg2\tlcg3\tlcg4" << std::endl;
-	for (int i=0;i<1e5;i++){
-		file << lcg1() << "\t" << lcg2() << "\t" << lcg3() << "\t" << lcg4() <<std::endl;
-	}
+	for (int i=0;i<1e5;i++)
+		file << lcg1() << "\t" << lcg2() << "\t" << lcg3() << "\t" << lcg4() <<"\n";
 	file.close();
+	
 	return 0;
 }
