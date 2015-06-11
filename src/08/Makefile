@@ -1,23 +1,28 @@
 CXX=g++
-CXXFLAGS=-O2 -Wall -Werror -pedantic -std=c++11
-CXXFLAGS+=$(shell pkg-config --cflags eigen3 | sed 's/I/isystem/g')
+CXXFLAGS=-O2 -Wall -Wextra -Werror -pedantic -std=c++11
 
-all: plots plots2
+all: lcg_corr_3.png lcg_corr.png lcg_hist.png dists.png
 
-lcg:lcg.cpp
+lcg: lcg.cpp
 
 lcg.txt: lcg
 	./lcg
 
-plots:lcg.txt plots.py 
+lcg_corr_3.png: lcg.txt plots.py 
 	python2 plots.py
 
-rand:rand.cpp
+lcg_corr.png: lcg.txt plots.py 
+	python2 plots.py
 
-rand.txt:rand
+lcg_hist.png: lcg.txt plots.py 
+	python2 plots.py
+
+rand: rand.cpp
+
+rand.txt: rand
 	./rand
 
-plots2:rand.txt plots2.py
+dists.png: rand.txt plots2.py
 	python2 plots2.py
 
 cleanlatex:
@@ -31,7 +36,6 @@ clean: cleanlatex
 	rm -f lcg
 	rm -f rand
 	rm -f *.txt
-	rm -f *.pdf
 	rm -f *.png
 	rm -f *.tar.gz
 
