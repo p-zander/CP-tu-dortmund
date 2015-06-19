@@ -35,7 +35,7 @@ std::pair<std::vector<T>, std::vector<Matrix<T, N, 1>>> powerEigs(const Matrix<T
     Matrix<T, N, N> B(A);
     Matrix<T, Eigen::Dynamic, Eigen::Dynamic> C;
 
-    for (int i = 0; i < k; ++i) {
+    for (size_t i = 0; i < k; ++i) {
         std::tie(vals[i], vecs[i]) = powerEig<T, N>(B, guess, eps);
         C = kroneckerProduct(vecs[i], vecs[i]).eval();
         C.resize(N, N);
@@ -79,30 +79,31 @@ template <typename T, size_t N> void jacobiRotation(Matrix<T, N, N> &A, double e
 }
 
 int main() {
-    Eigen::Matrix4d A;
-    A << 1, 2, 2, 4, 2, 5, 2, 1, 2, 2, 6, 3, 4, 1, 3, 4;
+  Eigen::Matrix4d A;
+  A << 1, 2, 2, 4, 2, 5, 2, 1, 2, 2, 6, 3, 4, 1, 3, 4;
 
-    std::cout << "A = " << std::endl << A << std::endl;
+  std::cout << "A = " << std::endl << A << std::endl;
 
-    std::cout << std::endl << "A.eigenvalues() = " << std::endl << A.eigenvalues() << std::endl;
+  std::cout << std::endl << "A.eigenvalues() = " << std::endl << A.eigenvalues()
+            << std::endl;
 
-    Eigen::Vector4d guess = Eigen::Vector4d::LinSpaced(A.cols(), -1, 1);
+  Eigen::Vector4d guess = Eigen::Vector4d::LinSpaced(A.cols(), -1, 1);
 
-    std::cout << std::endl;
-    std::cout << "First eigenvalue from powerEig: " << powerEig<double, 4>(A, guess).first << std::endl << std::endl;
+  std::cout << "\n \n necessary steps to calculate each eigenvalue via powerEigs \n \n";
+  std::vector<double> vals;
+  std::tie(vals, std::ignore) = powerEigs<double, 4>(A, guess);
 
-    std::vector<double> vals;
-    std::tie(vals, std::ignore) = powerEigs<double, 4>(A, guess);
+  std::cout << std::endl << "All eigenvalues from powerEigs: " << std::endl;
+  for (const double &x : vals) std::cout << x << std::endl;
 
-    std::cout << std::endl << "All eigenvalues from powerEigs: " << std::endl;
-    for (const double &x : vals) std::cout << x << std::endl;
+  std::cout << std::endl << "off(A) = " << off<double>(A) << std::endl;
 
-    std::cout << std::endl << "off(A) = " << off<double>(A) << std::endl;
+  jacobiRotation<double, 4>(A);
 
-    jacobiRotation<double, 4>(A);
+  std::cout << std::endl << "Jacobi rotated matrix A:" << std::endl << A
+            << std::endl;
+  std::cout << std::endl << "Eigenvalues are: " << std::endl << A.diagonal()
+            << std::endl;
 
-    std::cout << std::endl << "Jacobi rotated matrix A:" << std::endl << A << std::endl;
-    std::cout << std::endl << "Eigenvalues are: " << std::endl << A.diagonal() << std::endl;
-
-    return 0;
+  return 0;
 }

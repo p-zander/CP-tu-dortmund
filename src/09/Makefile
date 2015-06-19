@@ -2,7 +2,11 @@ CXX=g++
 CXXFLAGS=-O2 -Wall -Wextra -Werror -Wfatal-errors -pedantic -std=c++11
 CXXFLAGS+=$(shell pkg-config --cflags eigen3 | sed 's/I/isystem/g')
 
-all: eigs anharmOszi
+all: Lsg
+
+Lsg: eigs anharmOszi
+	./eigs > A1.txt
+	./anharmOszi > A2.txt
 
 eigs: eigs.cpp
 
