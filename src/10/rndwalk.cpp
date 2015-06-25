@@ -7,7 +7,7 @@
 int main() {
   const double a = 1.0e-2;
   const size_t N = 1000;
-  const size_t n = 100000;
+  const size_t n = 1000000;
   std::mt19937 gen;
   std::uniform_real_distribution<double> dist(-a, std::nextafter(a, a + 1));
 
@@ -18,6 +18,7 @@ int main() {
   std::vector<double> r2(n, 0);
 
   for (size_t i = 2; i < 2 * n; i+=2) {
+    #pragma omp parallel for
     for (size_t j = 0; j < N; ++j) {
       data[0][j] += rnd();
       data[1][j] += rnd();
