@@ -73,21 +73,29 @@ for a in a:
 
 # ––– 2 –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 data = np.genfromtxt('mc_int.txt')
+data_2 = np.genfromtxt('mc_int_rndwalk.txt')
 
 plt.figure()
-plt.loglog(data[:, 0], np.abs(data[:, 2]))
+plt.loglog(data[:, 0], np.abs(data[:, 2]), label=u"direct sampling")
+plt.loglog(data_2[:, 0], np.abs(data_2[:, 1]), label=u"Liegenlassen")
+plt.loglog(data_2[:, 0], np.abs(data_2[:, 2]), "y--", label=u"Reflektion")
 plt.xlim(10**1, 10**6)
+plt.xlabel(r"$N$")
+plt.ylabel(r"$\delta$")
+plt.legend(loc='best')
 plt.savefig("mc_int_pi.pdf")
+
+plt.figure()
+plt.plot(np.arange(1, 10), data[-1:, 3:-1].T, 'ro')
+plt.xlim(0, 10)
+plt.xlabel(r"$ab$")
+plt.ylabel(r"$A$")
+plt.savefig("mc_int_area_ellipse.pdf")
 
 data = np.genfromtxt('mc_int_hist.txt')
 
 plt.figure()
-plt.hist(data, bins=25)
+_, bins, _ = plt.hist(data, range=[2.95, 3.35], bins=40)
+plt.xlabel(r"approx $\pi$")
+plt.ylabel(u"Einträge pro " + '%.3f' % (bins[1] - bins[0]))
 plt.savefig("mc_int_pi_hist.pdf")
-
-data = np.genfromtxt('mc_int_rndwalk.txt')
-
-plt.figure()
-plt.loglog(data[:, 0], np.abs(data[:, 1]))
-plt.loglog(data[:, 0], np.abs(data[:, 2]))
-plt.savefig("mc_int_rndwalk.pdf")

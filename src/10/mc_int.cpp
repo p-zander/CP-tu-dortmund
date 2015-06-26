@@ -66,13 +66,19 @@ int main() {
         long double ell_2 = mc_int_over_ellipse(N, 2, 1, [](double, double) { return 1.; });  // 2*pi
         long double ell_3 = mc_int_over_ellipse(N, 3, 1, [](double, double) { return 1.; });  // 3*pi
         long double ell_4 = mc_int_over_ellipse(N, 2, 2, [](double, double) { return 1.; });  // 4*pi
-        long double ell_5 = mc_int_over_ellipse(N, 2, 3, [](double, double) { return 1.; });  // 6*pi
-        long double ell_6 = mc_int_over_ellipse(N, 3, 3, [](double, double) { return 1.; });  // 9*pi
+        long double ell_5 = mc_int_over_ellipse(N, 5, 1, [](double, double) { return 1.; });  // 5*pi
+        long double ell_6 = mc_int_over_ellipse(N, 2, 3, [](double, double) { return 1.; });  // 6*pi
+        long double ell_7 = mc_int_over_ellipse(N, 7, 1, [](double, double) { return 1.; });  // 7*pi
+        long double ell_8 = mc_int_over_ellipse(N, 2, 4, [](double, double) { return 1.; });  // 8*pi
+        long double ell_9 = mc_int_over_ellipse(N, 3, 3, [](double, double) { return 1.; });  // 9*pi
         long double f_int =
             mc_int_over_ellipse(N, sqrt(2), 1, [](double x, double) { return exp(-x * x); });  // 2.993...
 
         file << N << "\t" << pi << "\t" << M_PI - pi << "\t" << ell_1 << "\t" << ell_2 << "\t" << ell_3 << "\t" << ell_4
-             << "\t" << ell_5 << "\t" << ell_6 << "\t" << f_int << std::endl;
+             << "\t" << ell_5 << "\t" << ell_6 << "\t" << ell_7 << "\t" << ell_8 << "\t" << ell_9 << "\t" << f_int
+             << std::endl;
+
+        std::cout << "d) Value of the integral is I = " << f_int << std::endl;
     }
 
     file.close();
@@ -89,12 +95,12 @@ int main() {
     file.open("mc_int_rndwalk.txt");
     file.precision(5);
 
-    for (int i = 3; i < 9; ++i) {
+    for (int i = 3; i < 7; ++i) {
         unsigned int N = pow(10, i);
-        file << N << "\t" << M_PI - rnd_walk_pi(N, pow(10,2), 0.01) << "\t"
-             << M_PI - rnd_walk_pi(N, pow(10,2), 0.01, [](double x, double delta) {
-                    return (x > 0) ? 1 - (fabs(x + delta) - 1) : -1 + (fabs(x + delta) - 1);
-                }) << std::endl;
+        file << N << "\t" << M_PI - rnd_walk_pi(N, pow(10, 2), 0.01) << "\t"
+             << M_PI - rnd_walk_pi(N, pow(10, 2), 0.01, [](double x, double delta) {
+                           return (x > 0) ? 1 - (fabs(x + delta) - 1) : -1 + (fabs(x + delta) - 1);
+                       }) << std::endl;
     }
 
     return 0;
