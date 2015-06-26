@@ -11,7 +11,7 @@ plt.style.use('ggplot')
 
 
 def P(x, y, t):
-    return 1 / (0.65 * np.pi * t) * np.exp(-(x**2 + y**2) / (0.65 * t))
+    return 1 / (4*0.1789810 * np.pi * t) * np.exp(-(x**2 + y**2) / (4*0.1789810 * t))
 
 
 def f(t, m, b):

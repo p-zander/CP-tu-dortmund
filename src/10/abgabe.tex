@@ -15,7 +15,61 @@
 \begin{document}
 
 \section{Aufgabe 1}
-\subsection{a)}
+\subsection{a,b)}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=.75\textwidth]{r_a_1.png}
+	\caption{$\langle \vec{r}(t)\rangle / a$}
+	\label{fig:label}
+\end{figure}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.75\textwidth]{r2_a_1.png}
+	\caption{$\langle \vec{r}^2(t)\rangle / a^2$}
+	\label{fig:label}
+\end{figure}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.75\textwidth]{r2_fit_1.png}
+	\caption{Ausgleichsgerade zur Bestimmung von D}
+	\label{fig:label}
+\end{figure}
+Anhand der Ausgleichsrechnung 
+\begin{equation}
+	f(x,m,b) = 4mx+b
+\end{equation} 
+konnte ein Wert von $m \approx \SI{0.179}{}$ ermittelt werden.
+zusätzlich ergibt sich:
+\begin{align}
+D = \frac{ma^2}{\tau}
+\end{align}
 
-
+\FloatBarrier
+\subsection{c)}
+Für die analytische Lösung der Diffusionsgleichung 
+\begin{equation}
+\partial_tP=D\nabla^2P
+\end{equation}
+mit $P(\vec{r},0)=\delta(\vec{r})$ folgt
+\begin{equation}
+	P(\vec{r},0) = \frac{1}{4\pi D t}exp(\frac{-x^2+y^2}{4Dt})
+\end{equation}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=.75\textwidth]{hist10.png}
+	\caption{Histogram inklusive Vergleich mit der analytischen Lösung nach 10 Zeitschritten}
+	\label{fig:label}
+\end{figure}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=.75\textwidth]{hist100.png}
+	\caption{Histogram inklusive Vergleich mit der analytischen Lösung nach 100 Zeitschritten}
+	\label{fig:label}
+\end{figure}
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=.75\textwidth]{hist1000.png}
+	\caption{Histogram inklusive Vergleich mit der analytischen Lösung nach 1000 Zeitschritten}
+	\label{fig:label}
+\end{figure}
 \end{document}
