@@ -1,45 +1,47 @@
-#include <algorithm>
 #include <cstdio>
-#include <numeric>
 #include <random>
+#include <sstream>
 #include <vector>
 
-int main() {
-  const double a = 1.0e-2;
-  const size_t N = 1000;
-  const size_t n = 1000000;
+
+void rnd_walk(double a, size_t n_walks, size_t steps, std::string filename){
+
   std::mt19937 gen;
   std::uniform_real_distribution<double> dist(-a, std::nextafter(a, a + 1));
 
   auto rnd = [&dist, &gen]() { return dist(gen); };
 
-  std::vector<std::vector<double>> data(2, std::vector<double>(N, 0));
-  std::vector<double> r(2 * n, 0);
-  std::vector<double> r2(n, 0);
+  std::vector<std::vector<double>> data(2, std::vector<double>(steps, 0));
+  
+  FILE* fout = fopen(filename.c_str(), "w");
+  fprintf(fout, "#t\trx1\try1\t....\n");
 
-  for (size_t i = 2; i < 2 * n; i+=2) {
-    #pragma omp parallel for
-    for (size_t j = 0; j < N; ++j) {
+  for (size_t i = 1; i <= n_walks; i++) {
+    // #pragma omp parallel for
+    for (size_t j = 0; j < steps; j++) {
       data[0][j] += rnd();
       data[1][j] += rnd();
     }
-    r[i] = std::accumulate(data[0].begin(), data[0].end(), 0.0) / (N * a);
-    r[i + 1] = std::accumulate(data[1].begin(), data[1].end(), 0.0) / (N * a);
-
-
-    r2[i / 2] = std::inner_product(data[0].begin(), data[0].end(),
-                                   data[0].begin(), 0.0) / (N * a * a) +
-                std::inner_product(data[1].begin(), data[1].end(),
-                                   data[1].begin(), 0.0) / (N * a * a);
+      for(auto it1 = data[0].begin(),it2=data[1].begin(); it1 != data[0].end();it1++,it2++){
+      fprintf(fout, "%f\t%f\t", *it1, *it2);
+      }
+      fprintf(fout, "\n");
   }
-
-  FILE* fout = fopen("rnd.txt", "w");
-  fprintf(fout, "#<x>/a\t<y>/a\t<r2>/a\n");
-  for (auto it2 = r2.begin(), it = r.begin(); it != r.end(); it2++,it += 2) {
-    fprintf(fout, "%f\t%f\t%f\n", *it, *(it + 1), *it2);
-  }
-
   fclose(fout);
 
+
+}
+
+
+int main() {
+  const double a[4] = {1.0, 1.0e-1, 1.0e-2  , 10.0};
+  const size_t n_walks = 1000;
+  const size_t steps = 1000;
+
+  for (int i = 0; i < 1; i++){
+  std::stringstream filename("");
+  filename << "rnd_a_" << a[i] << ".txt";
+  rnd_walk(a[i],  n_walks, steps, filename.str());
+  }
   return 0;
 }
