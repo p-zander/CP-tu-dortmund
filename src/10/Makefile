@@ -5,7 +5,7 @@ all: plots
 
 rndwalk: rndwalk.cpp
 
-rnd.txt: rndwalk
+rnd_a_1.txt: rndwalk
 	./rndwalk
 
 mc_int: mc_int.cpp
@@ -19,7 +19,7 @@ mc_int_hist.txt: mc_int
 mc_int_rndwalk.txt: mc_int
 	./mc_int
 
-plots: rnd.txt mc_int.txt mc_int_hist.txt mc_int_rndwalk.txt plots.py
+plots: rnd_a_1.txt mc_int.txt mc_int_hist.txt mc_int_rndwalk.txt plots.py
 	python2 plots.py
 
 cleanlatex:
