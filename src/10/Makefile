@@ -1,7 +1,11 @@
 CXX=g++
 CXXFLAGS=-O2 -Wall -Wextra -Werror -Wfatal-errors -pedantic -std=c++11 -fopenmp
 
-all: plots 
+all: abgabe 
+
+abgabe: plots
+	pdflatex abgabe.tex
+	make cleanlatex
 
 rndwalk: rndwalk.cpp
 
