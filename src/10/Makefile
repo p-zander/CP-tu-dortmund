@@ -15,7 +15,7 @@ rnd_a_1.txt: rndwalk
 mc_int: mc_int.cpp
 
 mc_int.txt: mc_int
-	./mc_int
+	./mc_int >> Integrale.txt
 
 mc_int_hist.txt: mc_int
 	./mc_int
@@ -42,6 +42,11 @@ clean: cleanlatex
 	rm -f *.tar.gz
 
 pack: all
+	rm -f rndwalk
+	rm -f mc_int
+	rm -f *.png
+	rm -f mc*.pdf
+	rm -f mc*.txt rnd*.txt
 	tar -czf abgabe10.tar.gz *
 
 .PHONY: all plots clean cleanlatex pack
