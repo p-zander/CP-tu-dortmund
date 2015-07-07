@@ -161,6 +161,10 @@ void cde(unsigned long steps, unsigned int delta_steps, unsigned int steps_equi,
 
 int main() {
     std::ofstream file_d("mc_2_d.txt");
+    const size_t N2 = 50;
+    const size_t N3 = 25;
+    const unsigned long sweep2 = N2 * N2;
+    const unsigned long sweep3 = N3 * N3;
 #pragma omp parallel
     {
         if (omp_get_thread_num() == 0 % omp_get_num_threads()) {
@@ -177,21 +181,21 @@ int main() {
         if (omp_get_thread_num() == 6 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 3.00, "mc_2_cde_300.txt");
         if (omp_get_thread_num() == 7 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 3.50, "mc_2_cde_350.txt");
 
-        if (omp_get_thread_num() == 8 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 1.00, "mc_2_U1_100.txt", true, 50);
-        if (omp_get_thread_num() == 9 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 1.50, "mc_2_U1_150.txt", true, 50);
-        if (omp_get_thread_num() == 10 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 2.00, "mc_2_U1_200.txt", true, 50);
-        if (omp_get_thread_num() == 11 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 2.25, "mc_2_U1_225.txt", true, 50);
-        if (omp_get_thread_num() == 12 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 2.50, "mc_2_U1_250.txt", true, 50);
-        if (omp_get_thread_num() == 13 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 3.00, "mc_2_U1_300.txt", true, 50);
-        if (omp_get_thread_num() == 14 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 3.50, "mc_2_U1_350.txt", true, 50);
+        if (omp_get_thread_num() == 8 % omp_get_num_threads()) cde(1e5*sweep2, 100*sweep2, 1e6, 1.00, "mc_2_U1_100.txt", true, N2);
+        if (omp_get_thread_num() == 9 % omp_get_num_threads()) cde(1e5*sweep2, 100*sweep2, 1e6, 1.50, "mc_2_U1_150.txt", true, N2);
+        if (omp_get_thread_num() == 10 % omp_get_num_threads()) cde(1e5*sweep2, 100*sweep2, 1e6, 2.00, "mc_2_U1_200.txt", true, N2);
+        if (omp_get_thread_num() == 11 % omp_get_num_threads()) cde(1e5*sweep2, 100*sweep2, 1e6, 2.25, "mc_2_U1_225.txt", true, N2);
+        if (omp_get_thread_num() == 12 % omp_get_num_threads()) cde(1e5*sweep2, 100*sweep2, 1e6, 2.50, "mc_2_U1_250.txt", true, N2);
+        if (omp_get_thread_num() == 13 % omp_get_num_threads()) cde(1e5*sweep2, 100*sweep2, 1e6, 3.00, "mc_2_U1_300.txt", true, N2);
+        if (omp_get_thread_num() == 14 % omp_get_num_threads()) cde(1e5*sweep2, 100*sweep2, 1e6, 3.50, "mc_2_U1_350.txt", true, N2);
 
-        if (omp_get_thread_num() == 15 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 1.00, "mc_2_U2_100.txt", true, 25);
-        if (omp_get_thread_num() == 16 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 1.50, "mc_2_U2_150.txt", true, 25);
-        if (omp_get_thread_num() == 17 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 2.00, "mc_2_U2_200.txt", true, 25);
-        if (omp_get_thread_num() == 18 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 2.25, "mc_2_U2_225.txt", true, 25);
-        if (omp_get_thread_num() == 19 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 2.50, "mc_2_U2_250.txt", true, 25);
-        if (omp_get_thread_num() == 20 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 3.00, "mc_2_U2_300.txt", true, 25);
-        if (omp_get_thread_num() == 21 % omp_get_num_threads()) cde(1e5*sweep, 100*sweep, 1e6, 3.50, "mc_2_U2_350.txt", true, 25);
+        if (omp_get_thread_num() == 15 % omp_get_num_threads()) cde(1e5*sweep3, 100*sweep3, 1e6, 1.00, "mc_2_U2_100.txt", true, N3);
+        if (omp_get_thread_num() == 16 % omp_get_num_threads()) cde(1e5*sweep3, 100*sweep3, 1e6, 1.50, "mc_2_U2_150.txt", true, N3);
+        if (omp_get_thread_num() == 17 % omp_get_num_threads()) cde(1e5*sweep3, 100*sweep3, 1e6, 2.00, "mc_2_U2_200.txt", true, N3);
+        if (omp_get_thread_num() == 18 % omp_get_num_threads()) cde(1e5*sweep3, 100*sweep3, 1e6, 2.25, "mc_2_U2_225.txt", true, N3);
+        if (omp_get_thread_num() == 19 % omp_get_num_threads()) cde(1e5*sweep3, 100*sweep3, 1e6, 2.50, "mc_2_U2_250.txt", true, N3);
+        if (omp_get_thread_num() == 20 % omp_get_num_threads()) cde(1e5*sweep3, 100*sweep3, 1e6, 3.00, "mc_2_U2_300.txt", true, N3);
+        if (omp_get_thread_num() == 21 % omp_get_num_threads()) cde(1e5*sweep3, 100*sweep3, 1e6, 3.50, "mc_2_U2_350.txt", true, N3);
 
     }
 }
