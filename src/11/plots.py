@@ -105,12 +105,12 @@ for i in range(0, 7):
     U_T3[i] = 1 - (np.sum(data[:, 1]**4) / values) / \
         (np.sum(data[:, 1]**2) / values)**2
 
-
-
 plt.figure()
 plt.plot(temps, U_T1, 'ro', label=r"U(T), N=100")
-plt.plot(temps, U_T2, 'ko', label=r"U(T), N=50")
-plt.plot(temps, U_T3, 'bo', label=r"U(T), N=25")
+plt.plot(temps, U_T2, 'kx', label=r"U(T), N=50")
+plt.plot(temps, U_T3, 'b.', label=r"U(T), N=25")
+plt.xlim(0.5, 4)
+plt.ylim(-2.5, 0.5)
 plt.legend(loc='best')
 plt.savefig("U_T.pdf")
 
