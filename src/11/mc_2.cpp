@@ -100,7 +100,7 @@ template <typename T> void print(const T &sys, std::string output_file) {
     }
 }
 
-void a(const size_t size, const unsigned long steps, std::mt19937_64 &gen) {
+void a(const size_t size, const unsigned long steps, std::mt19937_64 gen) {
     double k_BT = 1.;
     systype sys = init_sys_rand(size, gen);
 
@@ -117,7 +117,7 @@ void a(const size_t size, const unsigned long steps, std::mt19937_64 &gen) {
 }
 
 void b(const size_t size, const unsigned long steps_max, const unsigned long delta_steps, const double k_BT,
-       std::mt19937_64 &gen, const std::string output_file) {
+       std::mt19937_64 gen, const std::string output_file) {
     systype sys_rand = init_sys_rand(size, gen);
     systype sys_const = init_sys_const(size);
 
@@ -132,7 +132,7 @@ void b(const size_t size, const unsigned long steps_max, const unsigned long del
 }
 
 void cde(size_t size, const unsigned long steps, const unsigned int delta_steps, const unsigned int steps_equi,
-         const double k_BT, std::mt19937_64 &gen, const std::string output_file, bool just_M = EandM) {
+         const double k_BT, std::mt19937_64 gen, const std::string output_file, bool just_M = EandM) {
     systype sys = init_sys_rand(size, gen);
     simulate(sys, gen, steps_equi, k_BT);
 
@@ -167,45 +167,46 @@ int main() {
     const unsigned long sweep6 = N6 * N6;
 
 #pragma omp parallel
-    {
+    {   
         std::mt19937_64 gen(seed + omp_get_thread_num());
-
+            
+        a(N1, 100 * sweep1, gen);
         if (omp_get_thread_num() == 0 % omp_get_num_threads()) {
-            a(N1, 1000 * sweep1, gen);
-            b(N1, 5e2 * sweep1, 10 * sweep1, 1.00, gen, "mc_2_b_100.txt");
-            b(N1, 5e2 * sweep1, 10 * sweep1, 2.25, gen, "mc_2_b_225.txt");
-            b(N1, 5e2 * sweep1, 10 * sweep1, 3.00, gen, "mc_2_b_300.txt");
+        b(N1, 2e3 * sweep1, 10 * sweep1, 1.00, gen, "mc_2_b_100.txt");
+        b(N1, 2e3 * sweep1, 10 * sweep1, 2.25, gen, "mc_2_b_225.txt");
+        b(N1, 2e3 * sweep1, 10 * sweep1, 3.00, gen, "mc_2_b_300.txt");
         }
-        if (omp_get_thread_num() == 1 % omp_get_num_threads())
-            cde(N1, 1e5 * sweep1, 100 * sweep1, 5e2 * sweep1, 1.00, gen, "mc_2_cde_100.txt", EandM);
-        if (omp_get_thread_num() == 2 % omp_get_num_threads())
-            cde(N1, 1e5 * sweep1, 100 * sweep1, 5e2 * sweep1, 1.50, gen, "mc_2_cde_150.txt", EandM);
-        if (omp_get_thread_num() == 3 % omp_get_num_threads())
-            cde(N1, 1e5 * sweep1, 100 * sweep1, 5e2 * sweep1, 2.00, gen, "mc_2_cde_200.txt", EandM);
-        if (omp_get_thread_num() == 4 % omp_get_num_threads())
-            cde(N1, 1e5 * sweep1, 100 * sweep1, 5e2 * sweep1, 2.25, gen, "mc_2_cde_225.txt", EandM);
-        if (omp_get_thread_num() == 5 % omp_get_num_threads())
-            cde(N1, 1e5 * sweep1, 100 * sweep1, 5e2 * sweep1, 2.29, gen, "mc_2_cde_229.txt", EandM);
-        if (omp_get_thread_num() == 6 % omp_get_num_threads())
-            cde(N1, 1e5 * sweep1, 100 * sweep1, 5e2 * sweep1, 2.50, gen, "mc_2_cde_250.txt", EandM);
-        if (omp_get_thread_num() == 7 % omp_get_num_threads())
-            cde(N1, 1e5 * sweep1, 100 * sweep1, 5e2 * sweep1, 3.00, gen, "mc_2_cde_300.txt", EandM);
-        if (omp_get_thread_num() == 8 % omp_get_num_threads())
-            cde(N1, 1e5 * sweep1, 100 * sweep1, 5e2 * sweep1, 3.50, gen, "mc_2_cde_350.txt", EandM);
 
-        if (omp_get_thread_num() == 9 % omp_get_num_threads()) {
+        if (omp_get_thread_num() == 0 % omp_get_num_threads())
+            cde(N1, 1e5 * sweep1, 100 * sweep1, 2e3 * sweep1, 1.00, gen, "mc_2_cde_100.txt", EandM);
+        if (omp_get_thread_num() == 1 % omp_get_num_threads())
+            cde(N1, 1e5 * sweep1, 100 * sweep1, 2e3 * sweep1, 1.50, gen, "mc_2_cde_150.txt", EandM);
+        if (omp_get_thread_num() == 2 % omp_get_num_threads())
+            cde(N1, 1e5 * sweep1, 100 * sweep1, 2e3 * sweep1, 2.00, gen, "mc_2_cde_200.txt", EandM);
+        if (omp_get_thread_num() == 3 % omp_get_num_threads())
+            cde(N1, 1e5 * sweep1, 100 * sweep1, 2e3 * sweep1, 2.25, gen, "mc_2_cde_225.txt", EandM);
+        if (omp_get_thread_num() == 4 % omp_get_num_threads())
+            cde(N1, 1e5 * sweep1, 100 * sweep1, 2e3 * sweep1, 2.29, gen, "mc_2_cde_229.txt", EandM);
+        if (omp_get_thread_num() == 5 % omp_get_num_threads())
+            cde(N1, 1e5 * sweep1, 100 * sweep1, 2e3 * sweep1, 2.50, gen, "mc_2_cde_250.txt", EandM);
+        if (omp_get_thread_num() == 6 % omp_get_num_threads())
+            cde(N1, 1e5 * sweep1, 100 * sweep1, 2e3 * sweep1, 3.00, gen, "mc_2_cde_300.txt", EandM);
+        if (omp_get_thread_num() == 7 % omp_get_num_threads())
+            cde(N1, 1e5 * sweep1, 100 * sweep1, 2e3 * sweep1, 3.50, gen, "mc_2_cde_350.txt", EandM);
+
+        if (omp_get_thread_num() == 1 % omp_get_num_threads()) {
             cde(N2, 1e5 * sweep2, 100 * sweep2, 5e2 * sweep2, 1.00, gen, "mc_2_U1_100.txt", justM);
             cde(N2, 1e5 * sweep2, 100 * sweep2, 5e2 * sweep2, 1.50, gen, "mc_2_U1_150.txt", justM);
             cde(N2, 1e5 * sweep2, 100 * sweep2, 5e2 * sweep2, 2.00, gen, "mc_2_U1_200.txt", justM);
             cde(N2, 1e5 * sweep2, 100 * sweep2, 5e2 * sweep2, 2.25, gen, "mc_2_U1_225.txt", justM);
         }
-        if (omp_get_thread_num() == 10 % omp_get_num_threads()) {
+        if (omp_get_thread_num() == 2 % omp_get_num_threads()) {
             cde(N2, 1e5 * sweep2, 100 * sweep2, 5e2 * sweep2, 2.29, gen, "mc_2_U1_229.txt", justM);
             cde(N2, 1e5 * sweep2, 100 * sweep2, 5e2 * sweep2, 2.50, gen, "mc_2_U1_250.txt", justM);
             cde(N2, 1e5 * sweep2, 100 * sweep2, 5e2 * sweep2, 3.00, gen, "mc_2_U1_300.txt", justM);
             cde(N2, 1e5 * sweep2, 100 * sweep2, 5e2 * sweep2, 3.50, gen, "mc_2_U1_350.txt", justM);
         }
-        if (omp_get_thread_num() == 11 % omp_get_num_threads()) {
+        if (omp_get_thread_num() == 3 % omp_get_num_threads()) {
             cde(N3, 1e5 * sweep3, 100 * sweep3, 5e2 * sweep3, 1.00, gen, "mc_2_U2_100.txt", justM);
             cde(N3, 1e5 * sweep3, 100 * sweep3, 5e2 * sweep3, 1.50, gen, "mc_2_U2_150.txt", justM);
             cde(N3, 1e5 * sweep3, 100 * sweep3, 5e2 * sweep3, 2.00, gen, "mc_2_U2_200.txt", justM);
@@ -215,7 +216,7 @@ int main() {
             cde(N3, 1e5 * sweep3, 100 * sweep3, 5e2 * sweep3, 3.00, gen, "mc_2_U2_300.txt", justM);
             cde(N3, 1e5 * sweep3, 100 * sweep3, 5e2 * sweep3, 3.50, gen, "mc_2_U2_350.txt", justM);
         }
-        if (omp_get_thread_num() == 12 % omp_get_num_threads()) {
+        if (omp_get_thread_num() == 4 % omp_get_num_threads()) {
             cde(N4, 1e5 * sweep4, 100 * sweep4, 5e2 * sweep4, 1.00, gen, "mc_2_U3_100.txt", justM);
             cde(N4, 1e5 * sweep4, 100 * sweep4, 5e2 * sweep4, 1.50, gen, "mc_2_U3_150.txt", justM);
             cde(N4, 1e5 * sweep4, 100 * sweep4, 5e2 * sweep4, 2.00, gen, "mc_2_U3_200.txt", justM);
